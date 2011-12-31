@@ -15,7 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require 'rexml/document'
+require 'rubygems'
+require 'libxml'
 require 'rextable'
 
 Wap = Struct.new(:ssid, :power, :channel, :encryption, :quality)
@@ -47,19 +48,19 @@ else
     exit(1)
 end
 
-file = File.new(ARGV[0], 'r')
-doc = REXML::Document.new(file)
+doc = LibXML::XML::Document.file(ARGV[0])
 waps = Hash.new
+entries = doc.root.find('wpt')
 
-doc.root.elements.each('//wpt') do |wpt|
-    mac = wpt.elements['extensions/MAC'].text
-    ssid = wpt.elements['extensions/SSID'].text
+entries.each do |wpt|
+    mac = wpt.find_first('extensions/MAC').content
+    ssid = wpt.find_first('extensions/SSID').content
     if not ssid then ssid = "<No SSID>" end
     if ssid =~ /&amp;#0;+/ then ssid = "<No SSID>" end
-    power = wpt.elements['extensions/RSSI'].text
-    channel = wpt.elements['extensions/ChannelID'].text
-    encryption = wpt.elements['extensions/privacy'].text
-    quality = wpt.elements['extensions/signalQuality'].text
+    power = wpt.find_first('extensions/RSSI').content
+    channel = wpt.find_first('extensions/ChannelID').content
+    encryption = wpt.find_first('extensions/privacy').content
+    quality = wpt.find_first('extensions/signalQuality').content
     
     wap = Wap.new(ssid, power, channel, encryption, quality) 
     
