@@ -40,7 +40,7 @@ Net::SMTP.class_eval do
 		sock = timeout(@open_timeout) { TCPSocket.open(@address, @port) }
 		@socket = Net::InternetMessageIO.new(sock)
 		@socket.read_timeout = 60 #@read_timeout
-		@socket.debug_output = STDERR #@debug_output
+		#@socket.debug_output = STDERR #@debug_output
 
 		check_response(critical { recv_response() })
 		do_helo(helodomain)
@@ -52,7 +52,7 @@ Net::SMTP.class_eval do
 		ssl.connect
 		@socket = Net::InternetMessageIO.new(ssl)
 		@socket.read_timeout = 60 #@read_timeout
-		@socket.debug_output = STDERR #@debug_output
+		#@socket.debug_output = STDERR #@debug_output
 		do_helo(helodomain)
 
 		authenticate user, secret, authtype if user
@@ -216,13 +216,9 @@ class CustomSMTPServer < MiniSmtpServer
 		puts "Received new message."
 		message_hash[:to].each do |rcpt|
 			to = strip_brackets(rcpt)
-			puts "TO: " + to
 			from = strip_brackets(message_hash[:from])
-			puts "FROM: " + from
 			subj = message_hash[:subject]
-			puts "SUBJECT: " + subj
 			msg = build_message(from, to, subj, message_hash[:data])
-			puts "MESSAGE:\r\n" + msg
 			domain = to.split('@')[1]
 			mx = get_MX_server(domain)
 			Net::SMTP.start(mx) do |smtp|
