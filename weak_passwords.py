@@ -112,10 +112,11 @@ pwds = ["password",
         "Changeme123"]
 
 pwds.extend(password_combos(comps))
-pwds.extend(password_combos(users))
 
 for u in users:
     for p in pwds:
+        print '%s:%s' % (u, p)
+    for p in password_combos([u])
         print '%s:%s' % (u, p)
         
 
