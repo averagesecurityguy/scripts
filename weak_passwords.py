@@ -72,6 +72,7 @@ args = parser.parse_args()
 
 users = []
 comps = []
+pwds = []
 
 if args.u:
     users.append(args.u)
@@ -82,7 +83,7 @@ if args.c:
 if args.C:
     comps = list_from_file(args.C)
 
-pwds = ["password",
+words = ["password",
 	"passw0rd",
 	"p@ssword",
 	"p@ssw0rd",
@@ -97,11 +98,12 @@ pwds = ["password",
 	"fall"]
 
 pwds.extend(password_combos(comps))
+pwds.extend(password_combos(words))
 
 for u in users:
-    for p in password_combos(pwds):
+    for p in pwds:
         print '%s %s' % (u, p)
-    for p in password_combos([u])
+    for p in password_combos([u]):
         print '%s %s' % (u, p)
         
 
