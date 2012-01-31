@@ -83,41 +83,26 @@ if args.C:
     comps = list_from_file(args.C)
 
 pwds = ["password",
-        "password123",
-        "Password",
-        "Password123",
-        "p@ssw0rd",
-        "p@ssw0rd123",
-        "P@ssw0rd",
-        "P@ssw0rd123",
-        "p@ssword",
-        "p@ssword123",
-        "P@ssword",
-        "P@ssword123",
-        "passw0rd",
-        "passw0rd123",
-        "Passw0rd",
-        "Passw0rd123",
+	"passw0rd",
+	"p@ssword",
+	"p@ssw0rd",
         "welcome",
-        "welcome123",
-        "Welcome",
-        "Welcome123",
-        "welc0me",
-        "welc0me123",
-        "Welc0me",
-        "Welc0me123",
-        "changeme",
-        "changeme123",
-        "Changeme",
-        "Changeme123"]
+	"welc0me",
+	"w3lcome",
+	"w3lc0me",
+	"changeme",
+	"winter",
+	"spring",
+	"summer",
+	"fall"]
 
 pwds.extend(password_combos(comps))
 
 for u in users:
-    for p in pwds:
-        print '%s:%s' % (u, p)
+    for p in password_combos(pwds):
+        print '%s %s' % (u, p)
     for p in password_combos([u])
-        print '%s:%s' % (u, p)
+        print '%s %s' % (u, p)
         
 
         
