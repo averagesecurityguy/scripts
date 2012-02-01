@@ -62,27 +62,32 @@ def password_combos(plist):
 
 #Parse command line arguments using argparse
 desc = """weak_passwords.py takes a username or userlist, a company name or
-company list and creates a username:password list using commom passwords
-cited by Chris Gates (carnal0wnage) and Rob Fuller (mubix) in their talk
-"The Dirty Little Secrets They Didn't Teach You In Pentesting Class"
-presented at Derbycon 2011.
+company list (optional) and a wordlist (optional) and creates username and 
+password combinations formatted for use in Metasploit. The script includes 
+some common passwords cited by Chris Gates (carnal0wnage) and Rob Fuller 
+(mubix) in their talk "The Dirty Little Secrets They Didn't Teach You In 
+Pentesting Class" presented at Derbycon 2011. The passwords are transformed
+using some of the best64 rules from hashcat.
 """
 parser = argparse.ArgumentParser(description=desc)
 usergroup = parser.add_mutually_exclusive_group(required=True)
 usergroup.add_argument('-u', action='store', default=None,
                     help='Username')
 usergroup.add_argument('-U', action='store', default=None,
-                    help='List of Usernames')
-compgroup = parser.add_mutually_exclusive_group(required=True)
+                    help='List of Usernames.')
+compgroup = parser.add_mutually_exclusive_group(required=False)
 compgroup.add_argument('-c', action='store', default=None,
                     help='Company name')
 compgroup.add_argument('-C', action='store', default=None,
-                    help='List of potential company names')
+                    help='List of potential company names.')
+wordlist = parser.add_argument('-w', action='store', default=None, 
+                    help='List of words to transform.')
 
 args = parser.parse_args()
 users = []
 comps = []
 pwds = []
+words = []
 
 if args.u:
     users.append(args.u)
@@ -92,21 +97,12 @@ if args.c:
     comps.append(args.c)
 if args.C:
     comps = list_from_file(args.C)
+if args.w:
+    words = list_from_file(args.w)
 
-words = ["password",
-        "passw0rd",
-        "p@ssword",
-        "p@ssw0rd",
-        "welcome",
-        "welc0me",
-        "w3lcome",
-        "w3lc0me",
-        "changeme",
-        "winter",
-        "spring",
-        "summer",
-        "fall",
-        "security",]
+words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
+                "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
+                "spring", "summer", "fall", "security"]
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
