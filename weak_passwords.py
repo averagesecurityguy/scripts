@@ -33,17 +33,29 @@ def list_from_file(filename):
         tmp.append(line.rstrip('\r\n'))
 
     return tmp
-
-def password_combos(plist):
+	
+def combos(word):
     tmp = []
-    for p in plist:
-        tmp.append(p)
-        tmp.append(p + "123")
-        tmp.append(p.capitalize())
-        tmp.append(p.capitalize() + "123")
+    tmp.append(word)
+    tmp.append(word + word)
+    tmp.append(word + "123")
+    for i in xrange(0,10):
+        tmp.append(word + str(i))
+        tmp.append(word + "0" + str(i))
+
+    for i in xrange(2000,2016):
+        tmp.append(word + str(i))
 
     return tmp
 
+def password_combos(plist):
+    pwd = []
+    for p in plist:
+        pwd.extend(combos(p))
+        pwd.extend(combos(p.capitalize()))
+        
+    return pwd
+    
 #------------------------------------------------------------------------------
 # Main Program
 #------------------------------------------------------------------------------
@@ -68,8 +80,6 @@ compgroup.add_argument('-C', action='store', default=None,
                     help='List of potential company names')
 
 args = parser.parse_args()
-
-
 users = []
 comps = []
 pwds = []
@@ -84,18 +94,19 @@ if args.C:
     comps = list_from_file(args.C)
 
 words = ["password",
-	"passw0rd",
-	"p@ssword",
-	"p@ssw0rd",
+        "passw0rd",
+        "p@ssword",
+        "p@ssw0rd",
         "welcome",
-	"welc0me",
-	"w3lcome",
-	"w3lc0me",
-	"changeme",
-	"winter",
-	"spring",
-	"summer",
-	"fall"]
+        "welc0me",
+        "w3lcome",
+        "w3lc0me",
+        "changeme",
+        "winter",
+        "spring",
+        "summer",
+        "fall",
+        "security",]
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
@@ -105,7 +116,3 @@ for u in users:
         print '%s %s' % (u, p)
     for p in password_combos([u]):
         print '%s %s' % (u, p)
-        
-
-        
-
