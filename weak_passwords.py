@@ -39,9 +39,12 @@ def combos(word):
     tmp.append(word)
     tmp.append(word + word)
     tmp.append(word + "123")
+
     for i in xrange(0,10):
         tmp.append(word + str(i))
         tmp.append(word + "0" + str(i))
+
+	tmp.append(word + "10")
 
     for i in xrange(2000,2016):
         tmp.append(word + str(i))
@@ -72,16 +75,19 @@ using some of the best64 rules from hashcat.
 parser = argparse.ArgumentParser(description=desc)
 usergroup = parser.add_mutually_exclusive_group(required=True)
 usergroup.add_argument('-u', action='store', default=None,
-                    help='Username')
+                    help='Comma delimited list of usernames')
 usergroup.add_argument('-U', action='store', default=None,
-                    help='List of Usernames.')
+                    help='File with list of Usernames.')
 compgroup = parser.add_mutually_exclusive_group(required=False)
 compgroup.add_argument('-c', action='store', default=None,
-                    help='Company name')
+                    help='Comma delimited list of company names')
 compgroup.add_argument('-C', action='store', default=None,
-                    help='List of potential company names.')
-wordlist = parser.add_argument('-w', action='store', default=None, 
-                    help='List of words to transform.')
+                    help='File with list of company names.')
+wordgroup = parser.add_mutually_exclusive_group(required=False)
+wordgroup.add_argument('-w', action='store', default=None,
+                    help='Comma delimited list of words')
+wordgroup.add_argument('-W', action='store', default=None, 
+                    help='File with list of words to transform.')
 
 args = parser.parse_args()
 users = []
@@ -90,19 +96,21 @@ pwds = []
 words = []
 
 if args.u:
-    users.append(args.u)
+    users.extend(args.u.split(","))
 if args.U:
     users = list_from_file(args.U)
 if args.c:
-    comps.append(args.c)
+    comps.extend(args.c.split(","))
 if args.C:
     comps = list_from_file(args.C)
 if args.w:
-    words = list_from_file(args.w)
+    words.extend(args.w.split(","))
+if args.W:
+    words = list_from_file(args.W)
 
 words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
                 "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
-                "spring", "summer", "fall", "security"]
+                "spring", "summer", "fall", "security"])
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
