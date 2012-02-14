@@ -74,19 +74,19 @@ using some of the best64 rules from hashcat.
 """
 parser = argparse.ArgumentParser(description=desc)
 usergroup = parser.add_mutually_exclusive_group(required=True)
-usergroup.add_argument('-u', action='store', default=None,
+usergroup.add_argument('-u', action='store', default=None, metavar="USERS",
                     help='Comma delimited list of usernames')
-usergroup.add_argument('-U', action='store', default=None,
+usergroup.add_argument('-U', action='store', default=None, metavar="USERFILE",
                     help='File with list of Usernames.')
 compgroup = parser.add_mutually_exclusive_group(required=False)
-compgroup.add_argument('-c', action='store', default=None,
+compgroup.add_argument('-c', action='store', default=None, metavar="COMPANIES",
                     help='Comma delimited list of company names')
-compgroup.add_argument('-C', action='store', default=None,
+compgroup.add_argument('-C', action='store', default=None, metavar="COMPANYFILE",
                     help='File with list of company names.')
 wordgroup = parser.add_mutually_exclusive_group(required=False)
-wordgroup.add_argument('-w', action='store', default=None,
+wordgroup.add_argument('-w', action='store', default=None, metavar="WORDS",
                     help='Comma delimited list of words')
-wordgroup.add_argument('-W', action='store', default=None, 
+wordgroup.add_argument('-W', action='store', default=None, metavar="WORDFILE", 
                     help='File with list of words to transform.')
 
 args = parser.parse_args()
