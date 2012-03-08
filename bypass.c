@@ -25,6 +25,12 @@ int main() {
   saServer.sin_addr.s_addr = inet_addr(IP_ADDRESS);
   saServer.sin_port = htons(PORT);
 
+  // Set Receive timeout on the socket
+  struct timeval tv;
+  tv.tv_sec = 1;
+  setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+
+  // Connect to socket
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
