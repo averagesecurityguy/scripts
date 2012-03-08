@@ -34,7 +34,7 @@ int main() {
   printf("Receiving");
   do {
     res = recv( ConnectSocket, data, 512, 0 );
-    printf(".");
+    printf("Received %d bytes of data.", res);
   } while (res > 0);
   printf("Received payload with size of %s.\n", sizeof(data));
 
