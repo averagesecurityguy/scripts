@@ -41,6 +41,8 @@ int main() {
   printf("Receiving");
   do {
     res = recv( ConnectSocket, data, 1024, 0 );
+    if (res < 0)
+      printf("recv failed: %d\n", WSAGetLastError());
     // total += res;
     printf(".");
   } while (res == WSAEMSGSIZE);
