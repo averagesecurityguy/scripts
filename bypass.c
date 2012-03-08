@@ -30,11 +30,14 @@ int main() {
 
   // Receive data from port
   char data[819200] = "";
-  int res;
+  int res = 0;
+  int total = 0;
+
   printf("Receiving");
   do {
-    res = recv( ConnectSocket, data, 512, 0 );
-    printf("Received %d bytes of data.", res);
+    res = recv( ConnectSocket, data, 1024, 0 );
+    total += res;
+    printf("Received %d total bytes of data.", total);
   } while (res > 0);
   printf("Received payload with size of %s.\n", sizeof(data));
 
