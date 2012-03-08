@@ -26,9 +26,9 @@ int main() {
   saServer.sin_port = htons(PORT);
 
   // Set Receive timeout on the socket
-  // struct timeval tv;
-  // tv.tv_sec = 1;
-  // setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+  struct timeval tv;
+  tv.tv_sec = 1;
+  setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
 
   // Connect to socket
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
@@ -41,11 +41,17 @@ int main() {
   printf("Receiving");
   do {
     res = recv( ConnectSocket, data, 1024, 0 );
-    if (res < 0)
-      printf("recv failed: %d\n", WSAGetLastError());
-    // total += res;
-    printf(".");
-  } while (res == WSAEMSGSIZE);
+    if (res > 0) { 
+      printf("."); 
+    }
+    else if (res == 0) {
+      break;
+    }
+    else {
+      printf("ERROR! %ld", WSAGetLastError());
+      break;
+    }
+  } while (res > 0);
   printf("Received payload with size of %s.\n", sizeof(data));
 
   printf("Allocating RWX memory.\n");
