@@ -53,7 +53,7 @@ int main() {
       break;
     }
   } while (res > 0);
-  printf("Received payload with size of %s.\n", sizeof(data));
+  printf("Received payload with size of %d.\n", sizeof(data));
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
