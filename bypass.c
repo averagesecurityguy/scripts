@@ -38,7 +38,7 @@ int main() {
   // Receive data from port
 
   char data[819200];
-  memset(data,'\0', sizeof(data));
+  memset(data, 0, sizeof(data));
 
   int res = 0;
 
