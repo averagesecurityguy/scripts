@@ -47,7 +47,7 @@ int main() {
     res = recv( ConnectSocket, buf, BUF_LEN, 0 );
     if (res > 0) {
       strcat(data, buf);
-      printf(".");
+      printf(data);
     }
     else if (res == 0) {
       break;
