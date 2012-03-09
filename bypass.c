@@ -4,6 +4,7 @@
 
 #define IP_ADDRESS "10.230.229.13"
 #define PORT 4444
+#define BUF_LEN 819200
 
 int main() {
   // Create WSADATA Object
@@ -34,8 +35,8 @@ int main() {
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
-  // Receive data from port
-  char data[819200] = { 0 };
+  // Receive data from port;
+  char* data = (char*)calloc(BUF_LEN, sizeof(char));
   int res = 0;
 
   printf("Receiving");
