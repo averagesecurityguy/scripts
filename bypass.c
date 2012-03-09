@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <stdio.h>
-#include <string.h>
 
 #define IP_ADDRESS "10.230.229.13"
 #define PORT 4444
@@ -50,7 +49,7 @@ int main() {
       break;
     }
     else {
-      printf("ERROR! %ld", WSAGetLastError());
+      printf("Here's My Freaking ERROR! %ld", WSAGetLastError());
       break;
     }
   } while (res > 0);
