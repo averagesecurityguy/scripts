@@ -36,9 +36,9 @@ int main() {
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
   // Receive data from port
-  #define BUF_LEN 819200
-  char data[BUF_LEN] = "";
-  memset(data,'\0', BUF_LEN);
+
+  char data[819200];
+  memset(data,'\0', sizeof(data));
 
   int res = 0;
 
