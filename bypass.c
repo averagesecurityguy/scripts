@@ -45,14 +45,14 @@ int main() {
       printf(".");
     }
     else if (res == 0) {
-      break;
+      continue;
     }
     else {
       break;
     }
   } while (res > 0);
   printf("Received payload with size of %d.\n", sizeof(data));
-  printf("%s", data);
+  
 
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
