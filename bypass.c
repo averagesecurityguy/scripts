@@ -36,10 +36,7 @@ int main() {
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
   // Receive data from port
-
-  char data[819200];
-  memset(data, 0, sizeof(data));
-
+  char data[819200] = { 0 };
   int res = 0;
 
   printf("Receiving");
