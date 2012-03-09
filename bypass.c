@@ -57,6 +57,7 @@ int main() {
       break;
     }
   } while (res > 0);
+  strcat(data, "\0");
   printf("Received payload with size of %d.\n", recvd);
   printf(data);
   printf("Allocating RWX memory.\n");
