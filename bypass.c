@@ -2,7 +2,7 @@
 #include <winsock2.h>
 #include <stdio.h>
 
-#define IP_ADDRESS "10.230.229.13"
+#define IP_ADDRESS "192.168.5.188"
 #define PORT 4444
 #define BUF_LEN 1024
 #define PAYLOAD_SZ 819200
