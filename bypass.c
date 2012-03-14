@@ -46,7 +46,7 @@ int main() {
   printf("Receiving\n");
   do {
     res = recv( ConnectSocket, index, BUF_LEN, 0 );
-    if (rcvd == 0) { size = *(u_long*)rwx; }
+    if (rcvd == 0) { size = *(u_long*)rwx; printf("Payload size: %d", size);}
     index += res;
     rcvd += res;
   } while (size > rcvd);
