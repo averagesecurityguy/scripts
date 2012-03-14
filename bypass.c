@@ -56,6 +56,6 @@ int main() {
   //typedef void(*func_t);
   //func_t f = (func_t *)rwx;
   //f();
-  ((void(*)())(rwx))();
+  ((void(*)())(rwx+4))();
 }
 
