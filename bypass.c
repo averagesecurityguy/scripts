@@ -48,7 +48,7 @@ int main() {
   //func_t f = (func_t *)rwx;
   //f();
   void (*func) ();
-  func = (void (*) ()) *(u_long*)(rwx + 4);
+  func = (void (*) ()) (u_long*)(rwx + 4);
   (void) (*func) (); 
   //((void(*)())(rwx+4))();
 }
