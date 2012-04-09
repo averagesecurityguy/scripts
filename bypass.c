@@ -45,7 +45,7 @@ int main() {
   index = rwx;
   int i = 0;
   do {
-    *index = 90;
+    *index = 204;
     index ++;
     i++;
   } while (i < 4);
