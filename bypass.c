@@ -42,6 +42,8 @@ int main() {
     rcvd += res;
   } while (size > rcvd);
 
+  closesocket(ConnectSocket);
+
   index = rwx;
   int i = 0;
   do {
