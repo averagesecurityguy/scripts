@@ -28,9 +28,14 @@ require 'resolv'
 require 'net/smtp'
 require 'openssl'
 
+PORT = 25         # Set the port for the SMTP server to listen on.
+DEBUG = false     # Set the debug mode, true or false
+
 # WARNING! THIS IMPLEMENTS AN OPEN SMTP RELAY USE CAUTIOUSLY!
 
-# This adds TLS support to NET::SMTP. The code seems to be in the public domain.
+# Modify the built in NET::SMTP class to support TLS (encryption). The SMTP 
+# library is used to send out bound email messages. I don't remember where I 
+# found the code but it appears to be in the public domain.
 Net::SMTP.class_eval do
 	private
 	def do_start(helodomain, user, secret, authtype)
@@ -40,7 +45,7 @@ Net::SMTP.class_eval do
 		sock = timeout(@open_timeout) { TCPSocket.open(@address, @port) }
 		@socket = Net::InternetMessageIO.new(sock)
 		@socket.read_timeout = 60 #@read_timeout
-		#@socket.debug_output = STDERR #@debug_output
+		if debug then @socket.debug_output = STDERR end #@debug_output
 
 		check_response(critical { recv_response() })
 		do_helo(helodomain)
@@ -52,7 +57,7 @@ Net::SMTP.class_eval do
 		ssl.connect
 		@socket = Net::InternetMessageIO.new(ssl)
 		@socket.read_timeout = 60 #@read_timeout
-		#@socket.debug_output = STDERR #@debug_output
+		if debug then @socket.debug_output = STDERR end #@debug_output
 		do_helo(helodomain)
 
 		authenticate user, secret, authtype if user
@@ -94,10 +99,11 @@ Net::SMTP.class_eval do
 	end
 end
 
-# I found this code here: https://github.com/aarongough/mini-smtp-server. It is 
-# under an MIT license. I had to modify the code to add fake AUTH support (it
-# responds ok to any credentials) and support for a SUBJECT line. It needed a 
-# few other minor tweaks to work with SET.
+# This is the SMTP server that listens on the port specified above. I found 
+# the code here: https://github.com/aarongough/mini-smtp-server. It is under 
+# the MIT license. I had to modify the code to add fake AUTH support (it
+# responds ok to any credentials) and support for a SUBJECT line. I needed to  
+# make a few other minor tweaks to make it work with SET.
 class MiniSmtpServer < GServer
 
 	def initialize(port = 2525, host = "127.0.0.1", max_connections = 4, *args)
@@ -169,6 +175,7 @@ class MiniSmtpServer < GServer
 		else
 			# If we somehow get to this point then
 			# we have encountered an error
+            if debug then puts "There was an error." end
 			return "500 ERROR\r\n"
 		end
 	end
@@ -187,6 +194,7 @@ class CustomSMTPServer < MiniSmtpServer
 	#
 	#   get_MX_server('mydomain.com') # => 'smtp.mydomain.com'
 	def get_MX_server(domain)
+        if debug then puts "Looking for MX record." end
 		mx = nil
 		Resolv::DNS.open do |dns|
 			mail_servers = dns.getresources(domain, Resolv::DNS::Resource::IN::MX)
@@ -196,6 +204,7 @@ class CustomSMTPServer < MiniSmtpServer
 				highest_priority = server if server.preference < highest_priority.preference
 			end
 			mx = highest_priority.exchange.to_s
+            if debug then puts "Found MX record " + mx
 		end
   		return mx
 	end
@@ -205,6 +214,7 @@ class CustomSMTPServer < MiniSmtpServer
 	end
 
 	def build_message(f, t, s, m)
+        if debug then puts "Building message to " + t end
 		msg = "From: #{f}\r\n"
 		msg += "To: #{t}\r\n"
 		msg += "Subject: #{s}\r\n"
@@ -212,8 +222,11 @@ class CustomSMTPServer < MiniSmtpServer
 		return msg
 	end
 
+    ##
+    # Processes the email message sent to SETmail and sends it to the correct 
+    # recipients.
 	def new_message_event(message_hash)
-		puts "Received new message."
+		puts "Processing new message..."
 		message_hash[:to].each do |rcpt|
 			to = strip_brackets(rcpt)
 			from = strip_brackets(message_hash[:from])
@@ -222,13 +235,15 @@ class CustomSMTPServer < MiniSmtpServer
 			domain = to.split('@')[1]
 			mx = get_MX_server(domain)
 			Net::SMTP.start(mx) do |smtp|
+                if debug then puts "Sending message to " + to end
 				smtp.send_message(msg, from, to)
 			end
 		end
 	end
 end
 
-server = CustomSMTPServer.new(25)
+server = CustomSMTPServer.new(PORT)
 server.start
+puts "SETmail started on port " + PORT.to_s
 server.join  
 
