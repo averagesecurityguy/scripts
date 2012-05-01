@@ -29,7 +29,7 @@ require 'net/smtp'
 require 'openssl'
 
 PORT = 25         # Set the port for the SMTP server to listen on.
-DEBUG = false     # Set the debug mode, true or false
+$debug = false     # Set the debug mode, true or false
 
 # WARNING! THIS IMPLEMENTS AN OPEN SMTP RELAY USE CAUTIOUSLY!
 
@@ -45,7 +45,7 @@ Net::SMTP.class_eval do
 		sock = timeout(@open_timeout) { TCPSocket.open(@address, @port) }
 		@socket = Net::InternetMessageIO.new(sock)
 		@socket.read_timeout = 60 #@read_timeout
-		if debug then @socket.debug_output = STDERR end #@debug_output
+		if $debug then @socket.debug_output = STDERR end #@debug_output
 
 		check_response(critical { recv_response() })
 		do_helo(helodomain)
@@ -57,7 +57,7 @@ Net::SMTP.class_eval do
 		ssl.connect
 		@socket = Net::InternetMessageIO.new(ssl)
 		@socket.read_timeout = 60 #@read_timeout
-		if debug then @socket.debug_output = STDERR end #@debug_output
+		if $debug then @socket.debug_output = STDERR end #@debug_output
 		do_helo(helodomain)
 
 		authenticate user, secret, authtype if user
@@ -175,13 +175,13 @@ class MiniSmtpServer < GServer
 		else
 			# If we somehow get to this point then
 			# we have encountered an error
-            if debug then puts "There was an error." end
+            if $debug then puts "There was an error." end
 			return "500 ERROR\r\n"
 		end
 	end
   
 	def new_message_event(message_hash)
-		puts "super: new_message_event"
+		if $debug then puts "super: new_message_event" end
 	end
 end
 
@@ -190,11 +190,12 @@ end
 # for each recipient and then sends the message to that recipient using the 
 # mail server for the domain.
 class CustomSMTPServer < MiniSmtpServer
+    
 	# Returns the highest priority MX record server for a domain or nil.
 	#
 	#   get_MX_server('mydomain.com') # => 'smtp.mydomain.com'
 	def get_MX_server(domain)
-        if debug then puts "Looking for MX record." end
+        if $debug then puts "Looking for MX record." end
 		mx = nil
 		Resolv::DNS.open do |dns|
 			mail_servers = dns.getresources(domain, Resolv::DNS::Resource::IN::MX)
@@ -204,7 +205,7 @@ class CustomSMTPServer < MiniSmtpServer
 				highest_priority = server if server.preference < highest_priority.preference
 			end
 			mx = highest_priority.exchange.to_s
-            if debug then puts "Found MX record " + mx
+            if $debug then puts "Found MX record " + mx end
 		end
   		return mx
 	end
@@ -214,7 +215,7 @@ class CustomSMTPServer < MiniSmtpServer
 	end
 
 	def build_message(f, t, s, m)
-        if debug then puts "Building message to " + t end
+        if $debug then puts "Building message to " + t end
 		msg = "From: #{f}\r\n"
 		msg += "To: #{t}\r\n"
 		msg += "Subject: #{s}\r\n"
@@ -235,7 +236,7 @@ class CustomSMTPServer < MiniSmtpServer
 			domain = to.split('@')[1]
 			mx = get_MX_server(domain)
 			Net::SMTP.start(mx) do |smtp|
-                if debug then puts "Sending message to " + to end
+                if $debug then puts "Sending message to " + to end
 				smtp.send_message(msg, from, to)
 			end
 		end
