@@ -44,7 +44,7 @@ def combos(word):
         tmp.append(word + str(i))
         tmp.append(word + "0" + str(i))
 
-	tmp.append(word + "10")
+    tmp.append(word + "10")
 
     for i in xrange(2000,2016):
         tmp.append(word + str(i))
