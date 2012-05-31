@@ -225,5 +225,6 @@ if len(webservers) > 0:
 
 template += "</div>\n</body>\n</html>"
 
+print("Saving report to summary.html.")
 summary = open("summary.html", "w")
 summary.write(template)
