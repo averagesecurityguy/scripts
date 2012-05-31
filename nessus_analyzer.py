@@ -32,17 +32,15 @@ def open_nessus_file(filename):
 		print("{0} is not a Nessus version 2 file.".format(filename))
 		sys.exit()
 
-def process_users(text):
-	users = []
+def process_users(hn, text):
+	users[hn] = []
 	for line in text.split('\n'):
 		if re.search(r'\$', line):
 			pass
 		elif re.match(r'^$', line):
 			pass
 		else:
-			users.append(line)
-	
-	return users
+			users[hn].append(line)
 
 def process_vulnerability(host, item):
 	id = item.attrib['pluginID']
@@ -63,7 +61,6 @@ def process_web_server(host, item):
 #-------------------------#
 # Begin the main program. #
 #-------------------------#
-hosts = []
 users = {}
 vulns = {}
 webservers = []
@@ -90,28 +87,29 @@ for report in reports:
 	# Process each host in the report
 	report_hosts = report.findall('ReportHost')
 	for host in report_hosts:
+
 		hn = host.attrib['name']
 		print("Processing host {0}".format(hn))
 		
 		# Find and process all of the ReportItems
 		report_items = host.findall('ReportItem')
 		for item in report_items:
+			plugin = item.attrib['pluginID']
 			
 			# Process the user accounts identified in plugin 56211
-			if item.attrib['pluginID'] == '56211':
-				hosts.append(hn)
-				users[hn] = process_users(item.find('plugin_output').text)
+			if plugin == '56211' or plugin == '10860':
+				process_users(hn, item.find('plugin_output').text)
 				
 			# Process MS08-067
-			if item.attrib['pluginID'] == '34477':
+			if plugin == '34477':
 				process_vulnerability(hn, item)
 				
 			# Process Open Windows Shares
-			if item.attrib['pluginID'] == '42411':
+			if plugin == '42411':
 				process_vulnerability(hn, item)
 			
 			# Process Web Servers
-			if item.attrib['pluginID'] == '10107':
+			if plugin == '10107':
 				process_web_server(hn, item)
 
 ##
