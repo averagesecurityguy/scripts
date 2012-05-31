@@ -14,6 +14,8 @@ Scripts
 * `firewarebf.py` - Python script to conduct a bruteforce password attack on fireware firewalls.
 * `gpx_view.rb` - Ruby script to parse an inSSIDer gpx file and output the identified wireless access points. It uses the rextable.rb script which provides nice table output.
 * `ishell.py` - Python script to provide an interactive shell. It can be run as a python script or compiled to an executable and run.
+* `ishell.exe` - Compiled version of ishell.py. Compiled with PyInstaller.
+* `nessus_analyzer.py` - Python script to read a Nessus v2 file and extract data useful for a penetration tester. This is not meant to be a full functioning Nessus parser.
 * `passfilter.py` - Python script that reads a wordlist and outputs words that match certain length and complexity requirements.
 * `rextable.rb` - Text table module from the metasploit REX library. I pulled it out as a separate module to be used more easily in small scripts.
 * `set_index.html` - Custom index.html file to be used with SET credential harvester attack when victim doesn't have a login form.
