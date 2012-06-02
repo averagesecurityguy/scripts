@@ -64,6 +64,7 @@ def process_web_server(host, item):
 users = {}
 vulns = {}
 webservers = []
+openports = {}
 
 ##
 # Process program arguments
