@@ -106,15 +106,15 @@ overridden using the -s flag.
 
 Examples:
 Return all words 3 to 10 characters long.
-    passfilter.py wordlist
+    passfilter.py -f wordlist
 
 Return all words 3 to 10 characters long that meet the windows complexity
 requirements.
-    passfilter.py -w wordlist
+    passfilter.py -w -f wordlist
 
 Return all words 5 to 9 characters long that have at least two lowercase
 letters and at least one digit.
-    passfilter.py -m 5 -x 9 -r lld wordlist
+    passfilter.py -m 5 -x 9 -r lld -f wordlist
 """
 
 parser = argparse.ArgumentParser(prog="Passfilter.py",
