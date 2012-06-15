@@ -169,6 +169,10 @@ for report in reports:
 			if plugin == '10079':
 				process_vulnerability(hid, item)
 
+			# Process Apache Tomcat Common Credentials
+			if plugin == '34970':
+				process_vulnerability(hid, item)
+
 			# Process SNMP Default Community Strings
 			if plugin == '10264' or plugin == '41028':
 				process_snmp(hid, plugin, item.find('plugin_output').text)
