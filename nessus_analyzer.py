@@ -32,31 +32,69 @@ def open_nessus_file(filename):
 		print("{0} is not a Nessus version 2 file.".format(filename))
 		sys.exit()
 
-def process_users(hn, text):
-	users[hn] = []
-	for line in text.split('\n'):
-		if re.search(r'\$', line):
-			pass
-		elif re.match(r'^$', line):
-			pass
-		else:
-			users[hn].append(line)
+def process_host_info(hn, properties):
 
-def process_vulnerability(host, item):
-	id = item.attrib['pluginID']
+	hid = ''
+	ip, os = process_host_properties(properties)
+
+	if not ip == '':
+		hid = ip
+	else:
+		hid = hn
+
+	return hid, os
+
+def process_host_properties(host_properties):
+	ip = ''
+	os = 'Unknown'
+	for tag in host_properties.findall('tag'):
+		if tag.attrib['name'] == 'host-ip':
+			ip = tag.text
+		if tag.attrib['name'] == 'operating-system':
+			os = tag.text
+
+	return ip, os
+
+def process_users(hid, text):
+	users[hid] = []
+
+	for line in text.split('\n'):
+		m = re.search(r' - (.*)$', line)
+		if m:
+			if re.search(r'\$', m.group(1)):
+				pass
+			else:
+				if not (m.group(1) in users[hid]):
+					users[hid].append(m.group(1))
+
+def process_snmp(hid, plugin, text):
+	snmp[hid] = []
+
+	if plugin == '41028' and not ('public' in snmp[hid]):
+		snmp[hid].append('public')
+
+	for line in text.split('\n'):
+		m = re.search(r' - (.*)$', line)
+		if m:
+			if not (m.group(1) in snmp[hid]):
+				snmp[hid].append(m.group(1))
+
+def process_vulnerability(hid, item):
+	pid = item.attrib['pluginID']
 	name = item.attrib['pluginName']
 	desc = item.find('description').text
-	if id in vulns.keys():
-		vulns[id][2].append(host)
+	if pid in vulns.keys():
+		vulns[pid][2].append(hid)
 	else:
-		vulns[id] = [name, desc, [host]]
+		vulns[pid] = [name, desc, [hid]]
 
-def process_web_server(host, item):
+def process_web_server(hid, item):
 	port = item.attrib['port']
 	if port == '443' or port == '8443':
-		webservers.append("https://{0}:{1}".format(host, port))
+		webservers.append("https://{0}:{1}".format(hid, port))
 	else:
-		webservers.append("http://{0}:{1}".format(host, port))
+		webservers.append("http://{0}:{1}".format(hid, port))
+
 
 #-------------------------#
 # Begin the main program. #
@@ -64,7 +102,9 @@ def process_web_server(host, item):
 users = {}
 vulns = {}
 webservers = []
-openports = {}
+hosts = {}
+ports = {}
+snmp = {}
 
 ##
 # Process program arguments
@@ -83,39 +123,65 @@ reports = nessus.findall('Report')
 ##
 # Process each of the reports
 for report in reports:
-	print("Processing report {0}".format(report.attrib['name']))
+	report_name = report.attrib['name']
+	print("Processing report {0}".format(report_name))
 	
 	# Process each host in the report
 	report_hosts = report.findall('ReportHost')
 	for host in report_hosts:
 
-		hn = host.attrib['name']
-		print("Processing host {0}".format(hn))
+		hid, os = process_host_info(host.attrib['name'], host.find('HostProperties'))
+				
+		print("Processing host {0}".format(hid))
+
+		hosts[hid] = os
+		tcp = {}
+		udp = {}
 		
 		# Find and process all of the ReportItems
 		report_items = host.findall('ReportItem')
 		for item in report_items:
+
+			if item.attrib['protocol'] == 'tcp' and item.attrib['port'] != '0':
+				tcp[item.attrib['port']] = 1
+			if item.attrib['protocol'] == 'udp' and item.attrib['port'] != '0':
+				udp[item.attrib['port']] = 1
+
 			plugin = item.attrib['pluginID']
 			
 			# Process the user accounts identified in plugin 56211
-			if plugin == '56211' or plugin == '10860':
-				process_users(hn, item.find('plugin_output').text)
+			if plugin == '56211' or plugin == '10860' or plugin == '10399':
+				process_users(hid, item.find('plugin_output').text)
 				
 			# Process MS08-067
 			if plugin == '34477':
-				process_vulnerability(hn, item)
+				process_vulnerability(hid, item)
 				
 			# Process Open Windows Shares
 			if plugin == '42411':
-				process_vulnerability(hn, item)
+				process_vulnerability(hid, item)
+
+			# Process Open NFS Shares
+			if plugin == '':
+				process_vulnerability(hid, item)
+
+			# Process Anonymous FTP
+			if plugin == '':
+				process_vulnerability(hid, item)
+
+			# Process SNMP Default Community Strings
+			if plugin == '10264' or plugin == '41028':
+				process_snmp(hid, plugin, item.find('plugin_output').text)
 			
 			# Process Web Servers
 			if plugin == '10107':
-				process_web_server(hn, item)
+				process_web_server(hid, item)
+
+		ports[hid] = [sorted(tcp.keys()), sorted(udp.keys())]
 
 ##
 # Print a report summarizing the data
-template = """
+t = """
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
@@ -173,6 +239,11 @@ p {
 	padding: 0;
 }
 
+p#mono {
+	font-family: Courier New, monospace;
+	font-size: .75em;
+}
+
 h2 {
 	margin: 8px 0 0 0;
 	padding: 0;
@@ -184,6 +255,17 @@ h1 {
 	padding: 0;
 	font-size: 1.75em;
 }
+
+
+table { border-collapse: collapse; }
+table, td, th { border: 1px solid #000000; }
+th { text-align: center; background-color: #f1f1f1; }
+td { padding-left: 4px; }
+th#ip { width: 100px; }
+th#os { width: 320px; }
+th#tcp { width: 540px; }
+th#udp { width: 540px; }
+
 </style>
 </head>
 <body>
@@ -192,40 +274,79 @@ h1 {
 <h1>Nessus Analyzer Summary</h1>
 """
 
-template += "<h2>{0}</h2>\n".format(file_name)
-template += "</div>\n"
+t += "<h2>{0}</h2>\n".format(file_name)
+t += "</div>\n"
+
+if len(ports) > 0:
+	t += "<h1>Open TCP Ports</h1>\n"
+	t += "<table>\n"
+	t += "<tr><th id=\"ip\">IP</th><th id=\"os\">OS</th>"
+	t += "<th id=\"tcp\">TCP ports</th></tr>\n"
+
+	for hid in sorted(ports.keys()):
+		if len(ports[hid][0]) > 0:
+			t += "<tr><td>{0}</td>".format(hid)
+			t += "<td>{0}</td>".format(hosts[hid])
+			t += "<td>{0}</td></tr>\n".format(", ".join(ports[hid][0]))
+
+	t += "</table>\n"
+
+if len(ports) > 0:
+	t += "<h1>Open UDP Ports</h1>\n"
+	t += "<table>\n"
+	t += "<tr><th id=\"ip\">IP</th><th id=\"os\">OS</th>"
+	t += "<th id=\"udp\">UDP Ports</th></tr>\n"
+
+	for hid in sorted(ports.keys()):
+		if len(ports[hid][1]) > 0:
+			t += "<tr><td>{0}</td>".format(hid)
+			t += "<td>{0}</td>".format(hosts[hid])
+			t += "<td>{0}</td></tr>\n".format(", ".join(ports[hid][1]))
+
+	t += "</table>\n"
 
 if len(users) > 0:
-	template += "<h1>User Accounts</h1>\n"
+	t += "<h1>User Accounts</h1>\n"
 	
-	for host in sorted(users.keys()):
-		template += "<h2>{0}</h2>\n".format(host)
-		template += "<pre>\n"
-		for user in users[host]:
-			template += "{0}\n".format(user)
-		template += "</pre>\n"
+	for hid in sorted(users.keys()):
+		t += "<h2>{0}</h2>\n".format(hid)
+		t += "<p>\n"
+		for user in users[hid]:
+			t += "{0}<br />\n".format(user)
+		t += "</p>\n"
+
+if len(snmp) > 0:
+	t += "<h1>SNMP Community Strings</h1>\n"
+	
+	for hid in sorted(snmp.keys()):
+		t += "<h2>{0}</h2>\n".format(hid)
+		t += "<p>\n"
+		for txt in snmp[hid]:
+			t += "{0}<br />\n".format(txt)
+		t += "</p>\n"
 
 if len(vulns) > 0:
-	template += "<h1>Selected Vulnerabilities</h1>\n"
+	t += "<h1>Selected Vulnerabilities</h1>\n"
 		
 	for id in sorted(vulns.keys()):
-		template += "<h2>{0}</h2>\n".format(vulns[id][0])
-		template += "<p>{0}</p>\n".format(vulns[id][1])
-		template += "<p><strong>Affected Hosts:</strong></p>\n"
-		template += "<pre>\n"
+		t += "<h2>{0}</h2>\n".format(vulns[id][0])
+		t += "<p>{0}</p>\n".format(vulns[id][1])
+		t += "<p><strong>Affected Hosts:</strong></p>\n"
+		t += "<p>\n"
 		for host in vulns[id][2]:
-			template += "{0}\n".format(host)
-		template += "</pre>\n"
+			t += "{0}\n".format(host)
+		t += "</p>\n"
 		
 if len(webservers) > 0:
-	template += "<h1>Web Servers</h1>\n"
+	t += "<h1>Web Servers</h1>\n"
 	
 	for server in webservers:
-		template += "<p><a href=\"{0}\">{1}</a></p>".format(server, server)
+		t += "<p><a href=\"{0}\">{1}</a></p>".format(server, server)
 		
 
-template += "</div>\n</body>\n</html>"
+t += "</div>\n</body>\n</html>"
 
-print("Saving report to summary.html.")
-summary = open("summary.html", "w")
-summary.write(template)
+summary_file = file_name + "_summary.html"
+print("Saving report to {0}".format(summary_file))
+summary = open(summary_file, "w")
+summary.write(t)
