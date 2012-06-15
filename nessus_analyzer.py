@@ -162,11 +162,11 @@ for report in reports:
 				process_vulnerability(hid, item)
 
 			# Process Open NFS Shares
-			if plugin == '':
+			if plugin == '11356':
 				process_vulnerability(hid, item)
 
 			# Process Anonymous FTP
-			if plugin == '':
+			if plugin == '10079':
 				process_vulnerability(hid, item)
 
 			# Process SNMP Default Community Strings
