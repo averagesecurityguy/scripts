@@ -11,6 +11,9 @@ import os.path
 def usage():
 	print("nessus-analyzer.py nessus_file")
 	sys.exit()
+
+def ip_key(ip):
+    return tuple(int(part) for part in ip.split('.'))
 	
 def open_nessus_file(filename):
 	if not os.path.exists(filename):
@@ -55,6 +58,25 @@ def process_host_properties(host_properties):
 
 	return ip, os
 
+def process_port(hid, protocol, port):
+
+	port = int(port)
+	if protocol == 'tcp' and port != 0:
+		if hid in tcp_ports.keys():
+			if not port in tcp_ports[hid]:
+				tcp_ports[hid].append(int(port))
+		else:
+			tcp_ports[hid] = []
+			tcp_ports[hid].append(int(port))
+	
+	if protocol == 'udp' and port != 0:
+		if hid in udp_ports.keys():
+			if not port in udp_ports[hid]:
+				udp_ports[hid].append(int(port))
+		else:
+			udp_ports[hid] = []
+			udp_ports[hid].append(int(port))
+
 def process_users(hid, text):
 	users[hid] = []
 
@@ -88,8 +110,7 @@ def process_vulnerability(hid, item):
 	else:
 		vulns[pid] = [name, desc, [hid]]
 
-def process_web_server(hid, item):
-	port = item.attrib['port']
+def process_web_server(hid, port):
 	if port == '443' or port == '8443':
 		webservers.append("https://{0}:{1}".format(hid, port))
 	else:
@@ -103,7 +124,8 @@ users = {}
 vulns = {}
 webservers = []
 hosts = {}
-ports = {}
+tcp_ports = {}
+udp_ports = {}
 snmp = {}
 
 ##
@@ -135,18 +157,12 @@ for report in reports:
 		print("Processing host {0}".format(hid))
 
 		hosts[hid] = os
-		tcp = {}
-		udp = {}
-		
+
 		# Find and process all of the ReportItems
 		report_items = host.findall('ReportItem')
 		for item in report_items:
-
-			if item.attrib['protocol'] == 'tcp' and item.attrib['port'] != '0':
-				tcp[item.attrib['port']] = 1
-			if item.attrib['protocol'] == 'udp' and item.attrib['port'] != '0':
-				udp[item.attrib['port']] = 1
-
+			
+			process_port(hid, item.attrib['protocol'], item.attrib['port'])
 			plugin = item.attrib['pluginID']
 			
 			# Process the user accounts identified in plugin 56211
@@ -179,9 +195,8 @@ for report in reports:
 			
 			# Process Web Servers
 			if plugin == '10107':
-				process_web_server(hid, item)
+				process_web_server(hid, item.attrib['port'])
 
-		ports[hid] = [sorted(tcp.keys()), sorted(udp.keys())]
 
 ##
 # Print a report summarizing the data
@@ -265,10 +280,10 @@ table { border-collapse: collapse; }
 table, td, th { border: 1px solid #000000; }
 th { text-align: center; background-color: #f1f1f1; }
 td { padding-left: 4px; }
-th#ip { width: 100px; }
+th#ip { width: 120px; }
 th#os { width: 320px; }
-th#tcp { width: 540px; }
-th#udp { width: 540px; }
+th#tcp { width: 520px; }
+th#udp { width: 520px; }
 
 </style>
 </head>
@@ -281,38 +296,38 @@ th#udp { width: 540px; }
 t += "<h2>{0}</h2>\n".format(file_name)
 t += "</div>\n"
 
-if len(ports) > 0:
+if len(tcp_ports) > 0:
 	t += "<h1>Open TCP Ports</h1>\n"
 	t += "<table>\n"
 	t += "<tr><th id=\"ip\">IP</th><th id=\"os\">OS</th>"
 	t += "<th id=\"tcp\">TCP ports</th></tr>\n"
 
-	for hid in sorted(ports.keys()):
-		if len(ports[hid][0]) > 0:
+	for hid in sorted(tcp_ports.keys(), key=ip_key):
+		if len(tcp_ports[hid]) > 0:
 			t += "<tr><td>{0}</td>".format(hid)
 			t += "<td>{0}</td>".format(hosts[hid])
-			t += "<td>{0}</td></tr>\n".format(", ".join(ports[hid][0]))
+			t += "<td>{0}</td></tr>\n".format(", ".join(str(x) for x in tcp_ports[hid]))
 
 	t += "</table>\n"
 
-if len(ports) > 0:
+if len(udp_ports) > 0:
 	t += "<h1>Open UDP Ports</h1>\n"
 	t += "<table>\n"
 	t += "<tr><th id=\"ip\">IP</th><th id=\"os\">OS</th>"
 	t += "<th id=\"udp\">UDP Ports</th></tr>\n"
 
-	for hid in sorted(ports.keys()):
-		if len(ports[hid][1]) > 0:
+	for hid in sorted(udp_ports.keys(), key=ip_key):
+		if len(udp_ports[hid]) > 0:
 			t += "<tr><td>{0}</td>".format(hid)
 			t += "<td>{0}</td>".format(hosts[hid])
-			t += "<td>{0}</td></tr>\n".format(", ".join(ports[hid][1]))
+			t += "<td>{0}</td></tr>\n".format(", ".join(str(x) for x in udp_ports[hid]))
 
 	t += "</table>\n"
 
 if len(users) > 0:
 	t += "<h1>User Accounts</h1>\n"
 	
-	for hid in sorted(users.keys()):
+	for hid in sorted(users.keys(), key=ip_key):
 		t += "<h2>{0}</h2>\n".format(hid)
 		t += "<p>\n"
 		for user in users[hid]:
@@ -322,7 +337,7 @@ if len(users) > 0:
 if len(snmp) > 0:
 	t += "<h1>SNMP Community Strings</h1>\n"
 	
-	for hid in sorted(snmp.keys()):
+	for hid in sorted(snmp.keys(), key=ip_key):
 		t += "<h2>{0}</h2>\n".format(hid)
 		t += "<p>\n"
 		for txt in snmp[hid]:
@@ -332,19 +347,19 @@ if len(snmp) > 0:
 if len(vulns) > 0:
 	t += "<h1>Selected Vulnerabilities</h1>\n"
 		
-	for id in sorted(vulns.keys()):
+	for id in sorted(vulns.keys(), key=ip_key):
 		t += "<h2>{0}</h2>\n".format(vulns[id][0])
 		t += "<p>{0}</p>\n".format(vulns[id][1])
 		t += "<p><strong>Affected Hosts:</strong></p>\n"
 		t += "<p>\n"
 		for host in vulns[id][2]:
-			t += "{0}\n".format(host)
+			t += "{0}<br />\n".format(host)
 		t += "</p>\n"
 		
 if len(webservers) > 0:
 	t += "<h1>Web Servers</h1>\n"
 	
-	for server in webservers:
+	for server in sorted(webservers):
 		t += "<p><a href=\"{0}\">{1}</a></p>".format(server, server)
 		
 
