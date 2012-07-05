@@ -387,7 +387,7 @@ th#notes { width: 830px; }
 <div id="container">
 <a name="top"></a>
 <div id="banner">
-<h1>Nessus Analyzer Summary</h1>
+<h1>Low Hanging Fruit</h1>
 """
 
 t += "<h2>{0}</h2>\n".format(file_name)
