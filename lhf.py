@@ -170,6 +170,14 @@ def process_web_server(hid, port):
 	else:
 		host_items[hid].web_servers.append((hid, port))
 
+def check_metasploit_exploit(hid, item):
+	metasploit = item.find('exploit_framework_metasploit')
+	mname = item.find('metasploit_name')
+	risk_factor = item.find('risk_factor')
+
+	if metasploit and metasploit.text == 'true':
+		if not risk_factor.text == 'None':
+			add_vulnerability(hid, item, mname.text) 
 
 
 #-------------------------#
@@ -252,6 +260,9 @@ for report in reports:
 				if item.attrib['svc_name'] == 'www':
 					process_web_server(hid, int(item.attrib['port']))
 
+			# Process Vulnerabilities with a Metasploit Exploit module
+			check_metasploit_exploit(hid, item)
+
 
 ##
 # Print a report summarizing the data
@@ -303,6 +314,46 @@ body {
 	color: #000000;
 }
 
+#menu {
+	width: 100%;
+	float: left;
+	background-color: #ffffff;
+	margin: 8px 0px;
+	border-bottom: 2px solid #1f1f1f;
+}
+
+#menu ul{
+	margin: 0;
+	padding: 0;
+} 
+
+#menu ul li {
+	list-style-type: none;
+	display: inline;
+}
+
+#menu a {
+	display: block;
+	float: left;
+	padding: 4px 8px;
+	color: #1f1f1f;
+	font-size: 1.25em;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+#menu a:active {
+	color: #1f1f1f;
+}
+
+#menu a:visited {
+	color: #1f1f1f;
+}
+
+#menu a:hover {
+	color: #f40000;
+}
+
 p {
 	margin: 0 0 4px 0;
 	padding: 0;
@@ -341,14 +392,31 @@ th#notes { width: 830px; }
 
 t += "<h2>{0}</h2>\n".format(file_name)
 t += """</div>
-<div id="menu"><ul>
-<li><a href="#ports">Port List</a></li>
+<div id="menu">
+<ul>
 <li><a href="#vulns">Vulnerabilities</a></li>
+<li><a href="#ports">Port List</a></li>
 <li><a href="#web">Web Servers</a></li>
 </ul>
 </div>"""
 
 if len(host_items) > 0:
+
+	##
+	# Print out the list of vulnerabilities
+	t += "<a name=\"vulns\"></a><h1>Vulnerabilities</h1>\n"
+	t += "<a href=\"#top\">(Back to Top)</a>\n"
+	if len(vulns) > 0:
+		for pid in sorted(vulns.keys()):
+			t += "<h2>{0}</h2>\n".format(vulns[pid].name)
+			t += "<p>{0}</p>\n".format(vulns[pid].desc)
+			t += "<p><table>\n"
+			t += "<tr><th id=\"ip\">IP Address</th>"
+			t += "<th id=\"notes\">Notes</th></tr>\n"
+			for host, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
+				t += "<tr><td>{0}</td>".format(host)
+				t += "<td>{0}</td></tr>\n".format(note)
+			t += "</table></p>\n"
 
 	##
 	# Print out the port list
@@ -366,22 +434,6 @@ if len(host_items) > 0:
 			", ".join(str(x) for x in host_items[hid].udp_ports))
 	
 	t += "</table>"
-
-	##
-	# Print out the list of vulnerabilities
-	t += "<a name=\"vulns\"></a><h1>Vulnerabilities</h1>\n"
-	t += "<a href=\"#top\">(Back to Top)</a>\n"
-	if len(vulns) > 0:
-		for pid in sorted(vulns.keys()):
-			t += "<h2>{0}</h2>\n".format(vulns[pid].name)
-			t += "<p>{0}</p>\n".format(vulns[pid].desc)
-			t += "<p><table>\n"
-			t += "<tr><th id=\"ip\">IP Address</th>"
-			t += "<th id=\"notes\">Notes</th></tr>\n"
-			for host, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
-				t += "<tr><td>{0}</td>".format(host)
-				t += "<td>{0}</td></tr>\n".format(note)
-			t += "</table></p>\n"
 
 	##
 	# Print out the web server list
