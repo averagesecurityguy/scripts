@@ -20,10 +20,17 @@ class HostItem():
 		self.os = os
 		self.tcp_ports = []
 		self.udp_ports = []
-		self.vulns = []
 		self.users = []
-		self.webservers = []
+		self.open_shares = []
+		self.web_servers = []
 		self.snmp = []
+		self.tomcat = []
+
+	def name(self):
+		if self.fqdn == "":
+			return "{0}".format(self.ip)
+		else:
+			return "{0} ({1})".format(self.ip, self.fqdn)
 
 class Vulnerability():
 
@@ -85,45 +92,84 @@ def process_port(hid, protocol, port):
 		if not p in host_items[hid].udp_ports:
 			host_items[hid].udp_ports.append(p)
 
-def process_users(hid, text):
+##
+# Extract usernames from plugin and add to vulnerability
+def process_users(hid, item):
+	text = item.find('plugin_output').text
+	users = []
 	for line in text.split('\n'):
-		m = re.search(r' - (.*)$', line)
+		m = re.search(r' - (.*) \((.*)\)$', line)
 		if m:
 			if re.search(r'\$', m.group(1)):
-				pass
+				continue
 			else:
-				if not (m.group(1) in host_items[hid].users):
-					host_items[hid].users.append(m.group(1))
+				if re.search(r'id 500', m.group(2)):
+					user = "{0} (Administrator)".format(m.group(1))
+				else:
+					user = m.group(1)
 
-def process_snmp(hid, plugin, text):
-	if plugin == '41028' and not ('public' in host_items[hid].snmp):
-		host_items[hid].snmp.append('public')
+				users.append(user)
 
+	note = ", ".join(users)
+	add_vulnerability(hid, item, note)
+
+##
+# Extract the shared folder names and add them to the vulnerability note
+def process_open_shares(hid, item):
+	text = item.find('plugin_output').text
+	shares = []
 	for line in text.split('\n'):
-		m = re.search(r' - (.*)$', line)
+		m = re.search(r'\+ (.*)$', line)
 		if m:
-			if not (m.group(1) in host_items[hid].snmp):
-				host_items[hid].snmp.append(m.group(1))
+			shares.append(m.group(1))
 
-def process_vulnerability(hid, item):
+	note = ", ".join(shares)
+
+	add_vulnerability(hid, item, note)
+
+def process_snmp(hid, item):
+	snmp = []
+	if plugin == '41028':
+		note = 'public'
+	else:
+		for line in text.split('\n'):
+			m = re.search(r' - (.*)$', line)
+			if m:
+				snmp.append(m.group(1))
+
+		note = ", ".join(snmp)
+
+	add_vulnerability(hid, item, note)
+
+##
+# Process Apache Tomcat vulnerability. Extract URL and credentials
+def process_apache_tomcat(hid, item):
+	text = item.find('plugin_output').text
+	u = re.search(r'Username : (.*)', text).group(1)
+	p = re.search(r'Password : (.*)', text).group(1)
+	url = re.search(r'(http://.*)', text).group(1)
+
+	note = "URL: {0}, User: {1}, Pass: {2}".format(url, u, p)
+
+	add_vulnerability(hid, item, note)
+	
+def add_vulnerability(hid, item, note=''):
 	pid = item.attrib['pluginID']
 	name = item.attrib['pluginName']
 	desc = item.find('description').text
 	
 	if pid in vulns.keys():
-		vulns[pid].hosts.append(hid)
+		vulns[pid].hosts.append((hid, note))
 	else:
 		vulns[pid] = Vulnerability(pid, name, desc)
-		vulns[pid].hosts.append(hid)
+		vulns[pid].hosts.append((hid, note))
 
 def process_web_server(hid, port):
-	host_items[hid].webservers.append((hid, port))
-
-def host_name_html(ip, name):
-	if name == '':
-		return "<h2>{0}</h2>\n".format(ip)
+	if (hid, port) in host_items[hid].web_servers:
+		pass
 	else:
-		return "<h2>{0}({1})</h2>\n".format(ip, name)
+		host_items[hid].web_servers.append((hid, port))
+
 
 
 #-------------------------#
@@ -169,38 +215,42 @@ for report in reports:
 			process_port(hid, item.attrib['protocol'], item.attrib['port'])
 			plugin = item.attrib['pluginID']
 			
-			# Process the user accounts identified in plugin 56211
+			# Process user accounts
 			# 10860 == local users, 10399 == domain users, 56211 == 1ocal
 			if plugin == '56211' or plugin == '10860' or plugin == '10399':
-				process_users(hid, item.find('plugin_output').text)
+				process_users(hid, item)
 				
 			# Process MS08-067
 			if plugin == '34477':
-				process_vulnerability(hid, item)
+				add_vulnerability(hid, item)
 				
 			# Process Open Windows Shares
 			if plugin == '42411':
-				process_vulnerability(hid, item)
+				process_open_shares(hid, item)
 
 			# Process Open NFS Shares
 			if plugin == '11356':
-				process_vulnerability(hid, item)
+				process_open_shares(hid, item)
 
 			# Process Anonymous FTP
 			if plugin == '10079':
-				process_vulnerability(hid, item)
+				add_vulnerability(hid, item)
 
 			# Process Apache Tomcat Common Credentials
 			if plugin == '34970':
-				process_vulnerability(hid, item)
+				process_apache_tomcat(hid, item)
 
 			# Process SNMP Default Community Strings
 			if plugin == '10264' or plugin == '41028':
-				process_snmp(hid, plugin, item.find('plugin_output').text)
+				process_snmp(hid, item)
 			
 			# Process Web Servers
 			if plugin == '10107':
-				process_web_server(hid, item.attrib['port'])
+				process_web_server(hid, int(item.attrib['port']))
+
+			if plugin == '22964':
+				if item.attrib['svc_name'] == 'www':
+					process_web_server(hid, int(item.attrib['port']))
 
 
 ##
@@ -217,7 +267,7 @@ body {
 	padding: 0;
 	text-align: center;
 	font-family: Calibri, Helvetica, sans-serif;
-	font-size: 16px;
+	font-size: 12pt;
 	background-color: #ffffff;
 	color: #1f1f1f;
 }
@@ -254,7 +304,7 @@ body {
 }
 
 p {
-	margin: 0 0 4px 16px;
+	margin: 0 0 4px 0;
 	padding: 0;
 }
 
@@ -265,32 +315,26 @@ h1 {
 }
 
 h2 {
-	margin: 24px 0 0 0;
+	margin: 12px 0 0 0;
 	padding: 0;
 	font-size: 1.25em;
 	color: #e40000;
 }
 
-h3 {
-	margin: 0;
-	padding: 0;
-	font-size: 1em;
-}
-
-
 table { border-collapse: collapse; }
-table, td, th { border: 1px solid #000000; }
+table, td, th { border: 1px solid #000000; vertical-align: top;}
 th { text-align: center; background-color: #f1f1f1; }
-td { padding-left: 4px; }
-th#ip { width: 120px; }
-th#os { width: 320px; }
-th#tcp { width: 520px; }
-th#udp { width: 520px; }
-
+td { padding: 0 4px 0 4px }
+th#ip { width: 130px; }
+th#os { width: 230px; }
+th#tcp { width: 300px; }
+th#udp { width: 300px; }
+th#notes { width: 830px; }
 </style>
 </head>
 <body>
 <div id="container">
+<a name="top"></a>
 <div id="banner">
 <h1>Nessus Analyzer Summary</h1>
 """
@@ -299,70 +343,64 @@ t += "<h2>{0}</h2>\n".format(file_name)
 t += """</div>
 <div id="menu"><ul>
 <li><a href="#ports">Port List</a></li>
-<li><a href="#Web">Web Servers</a></li>
-<li><a href="#Users">User List</a></li>
-<li><a href="#Vulns">Vulnerabilities</a></li>
+<li><a href="#vulns">Vulnerabilities</a></li>
+<li><a href="#web">Web Servers</a></li>
 </ul>
 </div>"""
 
 if len(host_items) > 0:
 
+	##
+	# Print out the port list
 	t += "<a name=\"ports\"></a><h1>Port List</h1>\n"
+	t += "<a href=\"#top\">(Back to Top)</a>\n"
+	t += "<table>"
+	t += "<tr><th id=\"ip\">IP Address</th><th id=\"os\">Operating System</th>"
+	t += "<th id=\"tcp\">Open TCP Ports</th><th id=\"udp\">Open UDP Ports</th></tr>\n"
 	for hid in sorted(host_items.keys(), key=ip_key):
 
-		t += host_name_html(hid, host_items[hid].fqdn)
+		t += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(
+			host_items[hid].ip,
+			host_items[hid].os,
+			", ".join(str(x) for x in host_items[hid].tcp_ports),
+			", ".join(str(x) for x in host_items[hid].udp_ports))
 	
-		if len(host_items[hid].tcp_ports) > 0:
-			t += "<h3>Open TCP Ports</h3>\n"
-			t += "<p>{0}</p>\n".format(
-				", ".join(str(x) for x in host_items[hid].tcp_ports))
-		
-		if len(host_items[hid].udp_ports) > 0:
-			t += "<h3>Open UDP Ports</h3>\n"
-			t += "<p>{0}</p>\n".format(
-				", ".join(str(x) for x in host_items[hid].udp_ports))
+	t += "</table>"
 
+	##
+	# Print out the list of vulnerabilities
+	t += "<a name=\"vulns\"></a><h1>Vulnerabilities</h1>\n"
+	t += "<a href=\"#top\">(Back to Top)</a>\n"
+	if len(vulns) > 0:
+		for pid in sorted(vulns.keys()):
+			t += "<h2>{0}</h2>\n".format(vulns[pid].name)
+			t += "<p>{0}</p>\n".format(vulns[pid].desc)
+			t += "<p><table>\n"
+			t += "<tr><th id=\"ip\">IP Address</th>"
+			t += "<th id=\"notes\">Notes</th></tr>\n"
+			for host, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
+				t += "<tr><td>{0}</td>".format(host)
+				t += "<td>{0}</td></tr>\n".format(note)
+			t += "</table></p>\n"
 
+	##
+	# Print out the web server list
+	t += "<a name=\"web\"></a><h1>Web Servers</h1>\n"
+	t += "<a href=\"#top\">(Back to Top)</a>\n"
+	t += "<p>\n"
 	for hid in sorted(host_items.keys(), key=ip_key):
-		t += "<a name=\"Users\"></a><h1>User List</h1>\n"
 
-		if len(host_items[hid].users) > 0:
-			t 
-
-			t += "<p>{0}</p>\n".format(
-				"<br />\n".join(host_items[hid].users))
-		else:
-			t += "<p>No User Accounts Identified</p>\n"
-
-	for hid in sorted(host_items.keys(), key=ip_key):
-		t += "<a name=\"snmp\"></a><h1>SNMP Community Strings</h1>\n"
-
-		if len(host_items[hid].snmp) > 0:
-			t += host_name_html(hid, host_items[hid].fqdn)
-			t += "<p>{0}</p>\n".format(
-				"<br />\n".join(host_items[hid].snmp))
-
-		if len(host_items[hid].webservers) > 0:
-			t += "<h3>Web Servers</h3>\n"
-			t += "<p>\n"
-			for host, port in host_items[hid].webservers:
-				if port == '443' or port == '8443':
+		if len(host_items[hid].web_servers) > 0:
+			for host, port in sorted(host_items[hid].web_servers):
+				if port == 443 or port == 8443:
 					prot = "https://"
 				else:
 					prot = "http://"
 				t += "<a href=\"{0}{1}:{2}\">{0}{1}:{2}</a><br />\n".format(
-					prot, host, port)
+					prot, host, str(port))
 
-			t += "</p>\n"
+	t += "</p>\n"
 
-if len(vulns) > 0:
-	t += "<h1>Vulnerability List</h1>\n"
-
-	for pid in sorted(vulns.keys()):
-		t += "<h2>{0}</h2>\n".format(vulns[pid].name)
-		t += "<p>{0}</p>\n".format(vulns[pid].desc)
-		t += "<p>{0}</p>\n".format(
-			"<br />\n".join(sorted(vulns[pid].hosts, key=ip_key)))
 
 t += "</div>\n</body>\n</html>"
 
