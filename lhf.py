@@ -41,7 +41,7 @@ class Vulnerability():
 		self.hosts = []
 
 def usage():
-	print("nessus-analyzer.py nessus_file")
+	print("lhf.py nessus_file")
 	sys.exit()
 
 def ip_key(ip):
@@ -171,13 +171,20 @@ def process_web_server(hid, port):
 		host_items[hid].web_servers.append((hid, port))
 
 def check_metasploit_exploit(hid, item):
-	metasploit = item.find('exploit_framework_metasploit')
-	mname = item.find('metasploit_name')
-	risk_factor = item.find('risk_factor')
+	metasploit = ''
+	mname = ''
+	risk_factor = ''
+	
+	if not item.find('exploit_framework_metasploit') is None:
+		metasploit = item.find('exploit_framework_metasploit').text
+		mname = item.find('metasploit_name').text
+	
+	if not item.find('risk_factor') is None:
+		risk_factor = item.find('risk_factor').text
 
-	if metasploit and metasploit.text == 'true':
-		if not risk_factor.text == 'None':
-			add_vulnerability(hid, item, mname.text) 
+	if metasploit == 'true':
+		if not risk_factor == 'None':
+			add_vulnerability(hid, item, mname) 
 
 
 #-------------------------#
@@ -219,7 +226,6 @@ for report in reports:
 		# Find and process all of the ReportItems
 		report_items = host.findall('ReportItem')
 		for item in report_items:
-			
 			process_port(hid, item.attrib['protocol'], item.attrib['port'])
 			plugin = item.attrib['pluginID']
 			
