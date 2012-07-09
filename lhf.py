@@ -277,7 +277,7 @@ t = """
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
-<title>Nessus Analyzer Summary</title>
+<title>Low Hanging Fruit Nessus Summary</title>
 <style>
 body {
 	margin: 0;
@@ -432,6 +432,8 @@ if len(host_items) > 0:
 	t += "<tr><th id=\"ip\">IP Address</th><th id=\"os\">Operating System</th>"
 	t += "<th id=\"tcp\">Open TCP Ports</th><th id=\"udp\">Open UDP Ports</th></tr>\n"
 	for hid in sorted(host_items.keys(), key=ip_key):
+		if len(host_items[hid].tcp_ports) == 0 and len(host_items[hid].udp_ports) == 0:
+			continue
 
 		t += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(
 			host_items[hid].ip,
