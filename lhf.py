@@ -219,6 +219,12 @@ for report in reports:
 	for host in report_hosts:
 
 		hid, fqdn, os = process_host_properties(host.find('HostProperties'))
+
+		# if hid and fqdn are empty then the host scan did not complete or 
+		# some other error has occured. Skip this host.
+		if (hid == '') and (fqdn == ''):
+			continue
+
 		host_items[hid] = HostItem(hid, fqdn, os)
 				
 		print("Processing host {0}".format(hid))
