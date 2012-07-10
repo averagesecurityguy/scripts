@@ -27,10 +27,11 @@ class HostItem():
 		self.tomcat = []
 
 	def name(self):
-		if self.fqdn == "":
-			return "{0}".format(self.ip)
+		if self.fqdn == '':
+			return '{0}'.format(self.ip)
 		else:
-			return "{0} ({1})".format(self.ip, self.fqdn)
+			return '{0} ({1})'.format(self.ip, self.fqdn)
+
 
 class Vulnerability():
 
@@ -40,12 +41,15 @@ class Vulnerability():
 		self.desc = desc
 		self.hosts = []
 
+
 def usage():
 	print("lhf.py nessus_file")
 	sys.exit()
 
+
 def ip_key(ip):
     return tuple(int(part) for part in ip.split('.'))
+
 	
 def open_nessus_file(filename):
 	if not os.path.exists(filename):
@@ -67,6 +71,7 @@ def open_nessus_file(filename):
 		print("{0} is not a Nessus version 2 file.".format(filename))
 		sys.exit()
 
+
 def process_host_properties(host_properties):
 	ip = ''
 	os = 'Unknown'
@@ -81,6 +86,7 @@ def process_host_properties(host_properties):
 
 	return ip, fqdn, os
 
+
 def process_port(hid, protocol, port):
 	p = int(port)
 
@@ -91,6 +97,7 @@ def process_port(hid, protocol, port):
 	if protocol == 'udp' and p != 0:
 		if not p in host_items[hid].udp_ports:
 			host_items[hid].udp_ports.append(p)
+
 
 ##
 # Extract usernames from plugin and add to vulnerability
@@ -113,6 +120,7 @@ def process_users(hid, item):
 	note = ", ".join(users)
 	add_vulnerability(hid, item, note)
 
+
 ##
 # Extract the shared folder names and add them to the vulnerability note
 def process_open_shares(hid, item):
@@ -126,6 +134,7 @@ def process_open_shares(hid, item):
 	note = ", ".join(shares)
 
 	add_vulnerability(hid, item, note)
+
 
 def process_snmp(hid, item):
 	snmp = []
@@ -141,6 +150,7 @@ def process_snmp(hid, item):
 
 	add_vulnerability(hid, item, note)
 
+
 ##
 # Process Apache Tomcat vulnerability. Extract URL and credentials
 def process_apache_tomcat(hid, item):
@@ -153,6 +163,7 @@ def process_apache_tomcat(hid, item):
 
 	add_vulnerability(hid, item, note)
 	
+
 def add_vulnerability(hid, item, note=''):
 	pid = item.attrib['pluginID']
 	name = item.attrib['pluginName']
@@ -164,11 +175,13 @@ def add_vulnerability(hid, item, note=''):
 		vulns[pid] = Vulnerability(pid, name, desc)
 		vulns[pid].hosts.append((hid, note))
 
+
 def process_web_server(hid, port):
 	if (hid, port) in host_items[hid].web_servers:
 		pass
 	else:
 		host_items[hid].web_servers.append((hid, port))
+
 
 def check_metasploit_exploit(hid, item):
 	metasploit = ''
@@ -290,7 +303,7 @@ body {
 	padding: 0;
 	text-align: center;
 	font-family: Calibri, Helvetica, sans-serif;
-	font-size: 12pt;
+	font-size: 10pt;
 	background-color: #ffffff;
 	color: #1f1f1f;
 }
@@ -388,8 +401,8 @@ table { border-collapse: collapse; }
 table, td, th { border: 1px solid #000000; vertical-align: top;}
 th { text-align: center; background-color: #f1f1f1; }
 td { padding: 0 4px 0 4px }
-th#ip { width: 130px; }
-th#os { width: 230px; }
+th#ip { width: 160px; }
+th#os { width: 200px; }
 th#tcp { width: 300px; }
 th#udp { width: 300px; }
 th#notes { width: 830px; }
@@ -435,14 +448,14 @@ if len(host_items) > 0:
 	t += "<a name=\"ports\"></a><h1>Port List</h1>\n"
 	t += "<a href=\"#top\">(Back to Top)</a>\n"
 	t += "<table>"
-	t += "<tr><th id=\"ip\">IP Address</th><th id=\"os\">Operating System</th>"
+	t += "<tr><th id=\"ip\">IP Address (FQDN)</th><th id=\"os\">Operating System</th>"
 	t += "<th id=\"tcp\">Open TCP Ports</th><th id=\"udp\">Open UDP Ports</th></tr>\n"
 	for hid in sorted(host_items.keys(), key=ip_key):
 		if len(host_items[hid].tcp_ports) == 0 and len(host_items[hid].udp_ports) == 0:
 			continue
 
 		t += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(
-			host_items[hid].ip,
+			host_items[hid].name(),
 			host_items[hid].os,
 			", ".join(str(x) for x in host_items[hid].tcp_ports),
 			", ".join(str(x) for x in host_items[hid].udp_ports))
