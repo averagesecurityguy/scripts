@@ -137,6 +137,7 @@ def process_open_shares(hid, item):
 
 
 def process_snmp(hid, item):
+	text = item.find('plugin_output').text
 	snmp = []
 	if plugin == '41028':
 		note = 'public'
