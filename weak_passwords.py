@@ -37,6 +37,7 @@ def list_from_file(filename):
 def combos(word):
     tmp = []
     tmp.append(word)
+    tmp.append("$" + word)
     tmp.append(word + word)
     tmp.append(word + "123")
 
