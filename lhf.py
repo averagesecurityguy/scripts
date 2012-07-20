@@ -47,10 +47,16 @@ def usage():
 	sys.exit()
 
 
+##
+# function to return an IP address as a tuple of ints. Used for sorting by
+# IP address.
 def ip_key(ip):
     return tuple(int(part) for part in ip.split('.'))
 
-	
+
+##
+# Take the filename and confirm that it exists, is not empty, and is a Nessus 
+# file.
 def open_nessus_file(filename):
 	if not os.path.exists(filename):
 		print("{0} does not exist.".format(filename))
@@ -72,6 +78,8 @@ def open_nessus_file(filename):
 		sys.exit()
 
 
+##
+# Extract host properties from the host_properties XML node.
 def process_host_properties(host_properties):
 	ip = ''
 	os = 'Unknown'
@@ -87,6 +95,8 @@ def process_host_properties(host_properties):
 	return ip, fqdn, os
 
 
+##
+# Split the TCP and UDP ports into separate lists.
 def process_port(hid, protocol, port):
 	p = int(port)
 
@@ -100,7 +110,8 @@ def process_port(hid, protocol, port):
 
 
 ##
-# Extract usernames from plugin and add to vulnerability
+# Extract usernames from the plugin and add them to a user list. Create a new 
+# vulnerability and add the user list to the notes field.
 def process_users(hid, item):
 	text = item.find('plugin_output').text
 	users = []
@@ -122,7 +133,8 @@ def process_users(hid, item):
 
 
 ##
-# Extract the shared folder names and add them to the vulnerability note
+# Extract the shared folder names from the plugin and add them to a share 
+# list. Create a new vulnerability and add the share list to the notes field.
 def process_open_shares(hid, item):
 	text = item.find('plugin_output').text
 	shares = []
@@ -136,6 +148,10 @@ def process_open_shares(hid, item):
 	add_vulnerability(hid, item, note)
 
 
+##
+# Extract the SNMP community names from the plugin (plugin 41028 is only for 
+# the public community name) and add them to a snmp list. Create a new 
+# vulnerability and add the snmp list to the notes field.
 def process_snmp(hid, item):
 	text = item.find('plugin_output').text
 	snmp = []
@@ -153,9 +169,11 @@ def process_snmp(hid, item):
 
 
 ##
-# Process Apache Tomcat vulnerability. Extract URL and credentials
+# Extract the URL and login credentials from the plugin. Create a new 
+# vulnerability and add the URL and credentials to the notes field.
 def process_apache_tomcat(hid, item):
 	text = item.find('plugin_output').text
+
 	u = re.search(r'Username : (.*)', text).group(1)
 	p = re.search(r'Password : (.*)', text).group(1)
 	url = re.search(r'(http://.*)', text).group(1)
@@ -165,25 +183,28 @@ def process_apache_tomcat(hid, item):
 	add_vulnerability(hid, item, note)
 	
 
-def add_vulnerability(hid, item, note=''):
-	pid = item.attrib['pluginID']
-	name = item.attrib['pluginName']
-	desc = item.find('description').text
-	
-	if pid in vulns.keys():
-		vulns[pid].hosts.append((hid, note))
-	else:
-		vulns[pid] = Vulnerability(pid, name, desc)
-		vulns[pid].hosts.append((hid, note))
+##
+# Extract the web server version from the plugin. Add the IP address, port, 
+# and server version to the web servers list.
+def process_web_server(hid, item):
+	output = item.find('plugin_output').text
+	int(item.attrib['port'])
+	server = ''
+	m = re.search(r'\n\n(.*?)(\n|$)', output)
 
+	if m:
+		server = m.group(1)
 
-def process_web_server(hid, port):
-	if (hid, port) in host_items[hid].web_servers:
+	if (hid, port, server) in host_items[hid].web_servers:
 		pass
 	else:
-		host_items[hid].web_servers.append((hid, port))
+		host_items[hid].web_servers.append((hid, port, server))
 
 
+##
+# Check the vulnerability to see if there is a Metasploit plugin. If there 
+# is, create a new vulenrability and add the metasploit plugin name to the 
+# notes field. 
 def check_metasploit_exploit(hid, item):
 	metasploit = ''
 	mname = ''
@@ -198,7 +219,22 @@ def check_metasploit_exploit(hid, item):
 
 	if metasploit == 'true':
 		if not risk_factor == 'None':
-			add_vulnerability(hid, item, mname) 
+			add_vulnerability(hid, item, mname)
+
+
+##
+# Create a new Vulnerability object and add it to the vulns dictionary.
+def add_vulnerability(hid, item, note=''):
+	pid = item.attrib['pluginID']
+	name = item.attrib['pluginName']
+	desc = item.find('description').text
+	
+	if pid in vulns.keys():
+		vulns[pid].hosts.append((hid, note))
+	else:
+		vulns[pid] = Vulnerability(pid, name, desc)
+		vulns[pid].hosts.append((hid, note))
+
 
 
 #-------------------------#
@@ -253,38 +289,32 @@ for report in reports:
 			# 10860 == local users, 10399 == domain users, 56211 == 1ocal
 			if plugin == '56211' or plugin == '10860' or plugin == '10399':
 				process_users(hid, item)
-				
-			# Process MS08-067
-			if plugin == '34477':
-				add_vulnerability(hid, item)
+				continue
 				
 			# Process Open Windows Shares
 			if plugin == '42411':
 				process_open_shares(hid, item)
+				continue
 
 			# Process Open NFS Shares
 			if plugin == '11356':
 				process_open_shares(hid, item)
-
-			# Process Anonymous FTP
-			if plugin == '10079':
-				add_vulnerability(hid, item)
+				continue
 
 			# Process Apache Tomcat Common Credentials
 			if plugin == '34970':
 				process_apache_tomcat(hid, item)
+				continue
 
 			# Process SNMP Default Community Strings
 			if plugin == '10264' or plugin == '41028':
 				process_snmp(hid, item)
+				continue
 			
 			# Process Web Servers
 			if plugin == '10107':
-				process_web_server(hid, int(item.attrib['port']))
-
-			if plugin == '22964':
-				if item.attrib['svc_name'] == 'www':
-					process_web_server(hid, int(item.attrib['port']))
+				process_web_server(hid, item)
+				continue
 
 			# Process Vulnerabilities with a Metasploit Exploit module
 			check_metasploit_exploit(hid, item)
@@ -435,7 +465,7 @@ if len(host_items) > 0:
 	if len(vulns) > 0:
 		for pid in sorted(vulns.keys()):
 			t += "<h2>{0}</h2>\n".format(vulns[pid].name)
-			t += "<p>{0}</p>\n".format(vulns[pid].desc)
+			t += "<p>{0}</p>\n".format(vulns[pid].desc.replace('\n\n', '<br />'))
 			t += "<p><table>\n"
 			t += "<tr><th id=\"ip\">IP Address</th>"
 			t += "<th id=\"notes\">Notes</th></tr>\n"
@@ -471,13 +501,13 @@ if len(host_items) > 0:
 	for hid in sorted(host_items.keys(), key=ip_key):
 
 		if len(host_items[hid].web_servers) > 0:
-			for host, port in sorted(host_items[hid].web_servers):
+			for host, port, server in sorted(host_items[hid].web_servers):
 				if port == 443 or port == 8443:
 					prot = "https://"
 				else:
 					prot = "http://"
-				t += "<a href=\"{0}{1}:{2}\">{0}{1}:{2}</a><br />\n".format(
-					prot, host, str(port))
+				t += "<a href=\"{0}{1}:{2}\">{0}{1}:{2}</a> ({3})<br />\n".format(
+					prot, host, str(port), server)
 
 	t += "</p>\n"
 
