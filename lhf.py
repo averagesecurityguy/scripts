@@ -135,11 +135,20 @@ def process_users(hid, item):
 ##
 # Extract the shared folder names from the plugin and add them to a share 
 # list. Create a new vulnerability and add the share list to the notes field.
+# Nessus lists the shares differently for Windows, AFP and NFS, which is why  
+# there are two different regular expressions. NFS is the odd man out.
 def process_open_shares(hid, item):
+	if item.attrib['pluginID'] == '11356':
+		sname = re.compile(r'^\+ (.*)$')
+	else:
+		sname = re.compile(r'^- (.*)$')
+
 	text = item.find('plugin_output').text
 	shares = []
+
 	for line in text.split('\n'):
-		m = re.search(r'\+ (.*)$', line)
+		m = sname.search(line)
+
 		if m:
 			shares.append(m.group(1))
 
@@ -184,11 +193,25 @@ def process_apache_tomcat(hid, item):
 	
 
 ##
+# Extract the URL and login credentials from the plugin. Create a new 
+# vulnerability and add the URL and credentials to the notes field.
+def process_default_credentials(hid, item):
+	text = item.find('plugin_output').text
+
+	u = re.search(r'Username : (.*)', text).group(1)
+	p = re.search(r'Password : (.*)', text).group(1)
+
+	note = "User: {0}, Pass: {1}".format(u, p)
+
+	add_vulnerability(hid, item, note)
+	
+
+##
 # Extract the web server version from the plugin. Add the IP address, port, 
 # and server version to the web servers list.
 def process_web_server(hid, item):
 	output = item.find('plugin_output').text
-	int(item.attrib['port'])
+	port = int(item.attrib['port'])
 	server = ''
 	m = re.search(r'\n\n(.*?)(\n|$)', output)
 
@@ -228,12 +251,13 @@ def add_vulnerability(hid, item, note=''):
 	pid = item.attrib['pluginID']
 	name = item.attrib['pluginName']
 	desc = item.find('description').text
+	port = item.attrib['port']
 	
 	if pid in vulns.keys():
-		vulns[pid].hosts.append((hid, note))
+		vulns[pid].hosts.append((hid, port, note))
 	else:
 		vulns[pid] = Vulnerability(pid, name, desc)
-		vulns[pid].hosts.append((hid, note))
+		vulns[pid].hosts.append((hid, port, note))
 
 
 
@@ -242,6 +266,11 @@ def add_vulnerability(hid, item, note=''):
 #-------------------------#
 host_items = {}
 vulns = {}
+
+##
+# Compiled regular expressions
+dc = re.compile(r'default credentials', re.I)
+dt = re.compile(r'directory traversal', re.I)
 
 
 ##
@@ -284,6 +313,7 @@ for report in reports:
 		for item in report_items:
 			process_port(hid, item.attrib['protocol'], item.attrib['port'])
 			plugin = item.attrib['pluginID']
+			name = item.attrib['pluginName']
 			
 			# Process user accounts
 			# 10860 == local users, 10399 == domain users, 56211 == 1ocal
@@ -301,6 +331,11 @@ for report in reports:
 				process_open_shares(hid, item)
 				continue
 
+			# Process Open AFP Shares
+			if plugin == '45380':
+				process_open_shares(hid, item)
+				continue
+
 			# Process Apache Tomcat Common Credentials
 			if plugin == '34970':
 				process_apache_tomcat(hid, item)
@@ -314,6 +349,16 @@ for report in reports:
 			# Process Web Servers
 			if plugin == '10107':
 				process_web_server(hid, item)
+				continue
+
+			# Default Credentials
+			if dc.search(name):
+				process_default_credentials(hid, item)
+				continue
+
+			# Directory Traversal
+			if dt.search(name):
+				add_vulnerability(hid, item)
 				continue
 
 			# Process Vulnerabilities with a Metasploit Exploit module
@@ -467,10 +512,10 @@ if len(host_items) > 0:
 			t += "<h2>{0}</h2>\n".format(vulns[pid].name)
 			t += "<p>{0}</p>\n".format(vulns[pid].desc.replace('\n\n', '<br />'))
 			t += "<p><table>\n"
-			t += "<tr><th id=\"ip\">IP Address</th>"
+			t += "<tr><th id=\"ip\">IP Address:port</th>"
 			t += "<th id=\"notes\">Notes</th></tr>\n"
-			for host, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
-				t += "<tr><td>{0}</td>".format(host)
+			for host, port, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
+				t += "<tr><td>{0}:{1}</td>".format(host,port)
 				t += "<td>{0}</td></tr>\n".format(note)
 			t += "</table></p>\n"
 
