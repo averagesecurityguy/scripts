@@ -533,8 +533,8 @@ if len(host_items) > 0:
 		t += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>\n".format(
 			host_items[hid].name(),
 			host_items[hid].os,
-			", ".join(str(x) for x in host_items[hid].tcp_ports),
-			", ".join(str(x) for x in host_items[hid].udp_ports))
+			", ".join(str(x) for x in sorted(host_items[hid].tcp_ports)),
+			", ".join(str(x) for x in sorted(host_items[hid].udp_ports) )
 	
 	t += "</table>"
 
