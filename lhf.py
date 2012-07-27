@@ -534,7 +534,7 @@ if len(host_items) > 0:
 			host_items[hid].name(),
 			host_items[hid].os,
 			", ".join(str(x) for x in sorted(host_items[hid].tcp_ports)),
-			", ".join(str(x) for x in sorted(host_items[hid].udp_ports) )
+			", ".join(str(x) for x in sorted(host_items[hid].udp_ports)) )
 	
 	t += "</table>"
 
