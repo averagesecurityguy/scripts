@@ -516,7 +516,7 @@ if len(host_items) > 0:
 			t += "<th id=\"notes\">Notes</th></tr>\n"
 			for host, port, note in sorted(vulns[pid].hosts, key=lambda x: ip_key(x[0])):
 				t += "<tr><td>{0}:{1}</td>".format(host,port)
-				t += "<td>{0}</td></tr>\n".format(note)
+				t += "<td>{0}</td></tr>\n".format(note.encode('ascii', 'replace'))
 			t += "</table></p>\n"
 
 	##
