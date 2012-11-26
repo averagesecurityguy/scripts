@@ -154,7 +154,15 @@ entries.each do |wpt|
     if ssid =~ /&amp;#0;+/ then ssid = "<No SSID>" end
     power = wpt.find_first('extensions/RSSI').content
     channel = wpt.find_first('extensions/ChannelID').content
-    encryption = wpt.find_first('extensions/privacy').content
+
+    # The security settings could be in the privacy tag or the security tag
+    if wpt.find_first('extensions/privacy')
+	encryption = wpt.find_first('extensions/privacy').content
+    end
+    if wpt.find_first('extensions/security')
+        encryption = wpt.find_first('extensions/security').content
+    end
+
     quality = wpt.find_first('extensions/signalQuality').content
     
     wap = Wap.new(mac, ssid, power, channel, encryption, quality) 
