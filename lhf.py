@@ -351,6 +351,10 @@ for report in reports:
 				process_web_server(hid, item)
 				continue
 
+			if plugin =='11424':
+				add_vulnerability(hid, item)
+				continue
+
 			# Default Credentials
 			if dc.search(name):
 				process_default_credentials(hid, item)
