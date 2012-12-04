@@ -4,7 +4,7 @@ import asyncore
 import dns.resolver
 
 port = 2525
-debug = True
+debug = False
 
 def get_mx_record(domain):
     records = dns.resolver.query(domain, 'MX')
