@@ -22,4 +22,5 @@ Scripts
 * `set_index.html` - Custom index.html file to be used with SET credential harvester attack when victim doesn't have a login form.
 * `setmail.rb` - Ruby script to provide an open mail relay to be used with the Social Engineering Toolkit (set). I didn't want to install sendmail and I didnt' want to use gmail.
 * `shell.py` - Python shell (non interactive).
+* `texttable.py` - Python module for creating text tables.
 * `weak_passwords.py` - Pythons script to generate a user pass file. By default it will create password combinations from common passwords. You can also give it a list of words or a word file and it will create password combinations from that list as well.
