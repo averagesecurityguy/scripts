@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Copyright (c) 2012, AverageSecurityGuy
 # All rights reserved.
 #
@@ -26,7 +27,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
 # OF SUCH DAMAGE.
 
-#!/usr/bin/env ruby
 require 'gserver'
 require 'resolv'
 require 'net/smtp'
