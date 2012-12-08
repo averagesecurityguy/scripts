@@ -57,7 +57,7 @@ int main() {
 
   // Get payload size
   u_long size = 0;
-  res = recv( ConnectSocket, &size, 4, 0 );
+  recv( ConnectSocket, (char *)&size, 4, 0 );
   printf("Payload size: %d\n", size);
   
   // Receive data from port;
