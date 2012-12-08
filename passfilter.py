@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (c) 2012, AverageSecurityGuy
 # All rights reserved.
 #
