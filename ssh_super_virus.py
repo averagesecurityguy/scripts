@@ -141,13 +141,15 @@ if __name__ == '__main__':
 	initial_keys = load_keys()
 	new_keys = []
 
-	print ''
+	print '[*] Testing loaded keys.'
 	for key in initial_keys:
 		for host in hosts:
 			for user in users:
 				login_with_key(user, key, host)
 
-	for key in new_keys:
+	print '[*] Testing discovered keys'
+	while new_keys != []:
+		key = new_keys.pop(0)
 		for host in hosts:
 			for user in users:
 				login_with_key(user, key, host)
