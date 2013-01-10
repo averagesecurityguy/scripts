@@ -23,6 +23,7 @@ Scripts
 * `setmail.rb` - Ruby script to provide an open mail relay to be used with the Social Engineering Toolkit (set). I didn't want to install sendmail and I didnt' want to use gmail.
 * `setmail.py` - Python port of setmail.rb. Depends on dnspython library.
 * `shell.py` - Python shell (non interactive).
+* `ssh_pwn.py` - Python script to exploit unprotected SSH private keys and harvest data from the exploited machine. 
 * `ssh_super_virus.py` - Python script to test logins with SSH keys.
 * `texttable.py` - Python module for creating text tables.
 * `weak_passwords.py` - Pythons script to generate a user pass file. By default it will create password combinations from common passwords. You can also give it a list of words or a word file and it will create password combinations from that list as well.
