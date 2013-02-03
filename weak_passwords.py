@@ -2,37 +2,37 @@
 # Copyright (c) 2012, AverageSecurityGuy
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without modification, 
+# Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-#  Redistributions of source code must retain the above copyright notice, this 
+#  Redistributions of source code must retain the above copyright notice, this
 #  list of conditions and the following disclaimer.
 #
-#  Redistributions in binary form must reproduce the above copyright notice, 
-#  this list of conditions and the following disclaimer in the documentation 
+#  Redistributions in binary form must reproduce the above copyright notice,
+#  this list of conditions and the following disclaimer in the documentation
 #  and/or other materials provided with the distribution.
 #
 #  Neither the name of AverageSecurityGuy nor the names of its contributors may
 #  be used to endorse or promote products derived from this software without
 #  specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 # OF SUCH DAMAGE.
 
-import sys
 import argparse
 
 #------------------------------------------------------------------------------
 # Functions
 #------------------------------------------------------------------------------
+
 
 def list_from_file(filename):
     tmp = []
@@ -45,7 +45,8 @@ def list_from_file(filename):
         tmp.append(line.rstrip('\r\n'))
 
     return tmp
-	
+
+
 def combos(word):
     tmp = []
     tmp.append(word)
@@ -53,35 +54,36 @@ def combos(word):
     tmp.append(word + word)
     tmp.append(word + "123")
 
-    for i in xrange(0,10):
+    for i in xrange(0, 10):
         tmp.append(word + str(i))
         tmp.append(word + "0" + str(i))
 
     tmp.append(word + "10")
 
-    for i in xrange(2000,2016):
+    for i in xrange(2000, 2016):
         tmp.append(word + str(i))
 
     return tmp
+
 
 def password_combos(plist):
     pwd = []
     for p in plist:
         pwd.extend(combos(p))
         pwd.extend(combos(p.capitalize()))
-        
+
     return pwd
-    
+
 #------------------------------------------------------------------------------
 # Main Program
 #------------------------------------------------------------------------------
 
 #Parse command line arguments using argparse
 desc = """weak_passwords.py takes a username or userlist, a company name or
-company list (optional) and a wordlist (optional) and creates username and 
-password combinations formatted for use in Metasploit. The script includes 
-some common passwords cited by Chris Gates (carnal0wnage) and Rob Fuller 
-(mubix) in their talk "The Dirty Little Secrets They Didn't Teach You In 
+company list (optional) and a wordlist (optional) and creates username and
+password combinations formatted for use in Metasploit. The script includes
+some common passwords cited by Chris Gates (carnal0wnage) and Rob Fuller
+(mubix) in their talk "The Dirty Little Secrets They Didn't Teach You In
 Pentesting Class" presented at Derbycon 2011. The passwords are transformed
 using some of the best64 rules from hashcat.
 """
@@ -99,7 +101,7 @@ compgroup.add_argument('-C', action='store', default=None, metavar="COMPANYFILE"
 wordgroup = parser.add_mutually_exclusive_group(required=False)
 wordgroup.add_argument('-w', action='store', default=None, metavar="WORDS",
                     help='Comma delimited list of words')
-wordgroup.add_argument('-W', action='store', default=None, metavar="WORDFILE", 
+wordgroup.add_argument('-W', action='store', default=None, metavar="WORDFILE",
                     help='File with list of words to transform.')
 
 args = parser.parse_args()
@@ -121,9 +123,9 @@ if args.w:
 if args.W:
     words = list_from_file(args.W)
 
-words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
-                "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
-                "spring", "summer", "fall", "security"])
+words.extend(["password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
+              "welc0me", "w3lcome", "w3lc0me", "changeme", "winter",
+              "spring", "summer", "fall", "security"])
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
