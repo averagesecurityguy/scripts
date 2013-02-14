@@ -48,20 +48,29 @@ def list_from_file(filename):
 
 
 def combos(word):
-    tmp = []
-    tmp.append(word)
-    tmp.append("$" + word)
-    tmp.append(word + word)
-    tmp.append(word + "123")
+    adds = []
+
+    adds.extend(['$', '123', '456', '789', '69', '6969', '89', '99', '1234'])
+    adds.extend(['33', '44', '55', '66', '77', '88', '1977', '1978', '1979'])
+    adds.extend(['1234', '4321', '007', '2112', '!', '@', '#', ])
 
     for i in xrange(0, 10):
-        tmp.append(word + str(i))
-        tmp.append(word + "0" + str(i))
+        adds.append(str(i))
+        adds.append("0" + str(i))
 
-    tmp.append(word + "10")
+    for i in xrange(10, 23):
+        adds.append(str(i))
 
-    for i in xrange(2000, 2016):
-        tmp.append(word + str(i))
+    for i in xrange(1990, 2013):
+        adds.append(str(i))
+
+    tmp = []
+
+    tmp.append(word)
+    tmp.append(word + word)
+    for a in adds:
+        tmp.append(word + a)
+        tmp.append(a + word)
 
     return tmp
 
