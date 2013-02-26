@@ -209,7 +209,7 @@ def process_apache_tomcat(hid, item):
 
 	u = re.search(r'Username : (.*)', text).group(1)
 	p = re.search(r'Password : (.*)', text).group(1)
-	url = re.search(r'(http://.*)', text).group(1)
+	url = re.search(r'([http|https]://.*)', text).group(1)
 
 	note = "URL: {0}, User: {1}, Pass: {2}".format(url, u, p)
 
@@ -222,7 +222,7 @@ def process_apache_tomcat(hid, item):
 def process_default_credentials(hid, item):
 	text = item.find('plugin_output').text
 
-	u = re.search(r'Username : (.*)', text).group(1)
+	u = re.search(r'User.* : (.*)', text).group(1)
 	p = re.search(r'Password : (.*)', text).group(1)
 
 	note = "User: {0}, Pass: {1}".format(u, p)
