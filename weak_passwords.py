@@ -132,9 +132,14 @@ if args.w:
 if args.W:
     words = list_from_file(args.W)
 
-words.extend(["password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
-              "welc0me", "w3lcome", "w3lc0me", "changeme", "winter",
-              "spring", "summer", "fall", "security"])
+words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
+                "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
+                "spring", "summer", "fall", "security", "123456", "12345678",
+                "abc123", "qwerty", "monkey", "letmein", "dragon", "111111",
+                "baseball", "iloveyou", "trustno1", "1234567", "sunshine",
+                "master", "123123", "shadow", "shad0w", "ashley", "football",
+                "f00tball", "footb@ll", "f00tb@ll", "jesus", "michael", 
+                "ninja", "mustang"])
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
