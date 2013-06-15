@@ -54,3 +54,5 @@ if __name__ == '__main__':
     # Wait for all worker processes to finish
     for p in procs:
         p.join()
+
+    print success_queue
