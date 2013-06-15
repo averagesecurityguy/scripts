@@ -12,6 +12,7 @@ success = sys.argv[4]
 
 for pwd in open(passfile):
     for user in open(userfile):
-        resp = requests.get(url, auth=requests.HTTPBasicAuth(user, pwd))
-        if success in resp.text:
-            print 'Success: {0}/{1}'.format(user, pwd)
+        resp = requests.get(url, auth=requests.auth.HTTPBasicAuth(user, pwd))
+        print resp.content
+        # if success in resp.text:
+        #     print 'Success: {0}/{1}'.format(user, pwd)
