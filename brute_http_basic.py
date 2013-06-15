@@ -6,29 +6,31 @@ import Queue
 
 
 def worker(url, cred_queue, success_queue):
+    print '[*] Starting new worker thread.'
     while True:
-        # If there are no creds in the queue, stop the thread
+        # If there are no creds to test, stop the thread
         try:
             creds = cred_queue.get(timeout=10)
         except Queue.Empty:
+            print '[-] Credential queue is empty quitting.'
             return
 
-        # If we have good creds then stop the thread
-        if len(success_queue) > 0:
+        # If there are good creds in the queue, stop the thread
+        if not success_queue.empty():
+            print '[+] Success queue has credentials.'
             return
 
         # Check a set of creds. If successful add them to the success_queue
         # and stop the thread.
         auth = requests.auth.HTTPBasicAuth(creds[0], creds[1])
         resp = requests.get(url, auth=auth, verify=False)
-        if resp.status_code == 200:
-            print '[+] Success: {0}/{1}'.format(user, pwd)
-            success_queue.put(creds)
-            return
+        if resp.status_code == 401:
+            print '[-] Failure: {0}/{1}'.format(creds[0], creds[1])
         else:
-            print '[-] Failure: {0}/{1}'.format(user, pwd)
-
-        time.sleep(.5)
+            print '[+] Success: {0}/{1}'.format(creds[0], creds[1])
+            success_queue.put(creds)
+            print '[+] Quitting'
+            return
 
 
 if __name__ == '__main__':
