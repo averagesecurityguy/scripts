@@ -49,8 +49,12 @@ if __name__ == '__main__':
         p.start()
 
     for user in open(sys.argv[2]):
+        user = user.rstrip('\r\n')
+        if user == '':
+            continue
         for pwd in open(sys.argv[3]):
-            cred_queue.put((user.rstrip('\r\n'), pwd.rstrip('\r\n')))
+            pwd = pwd.rstrip('\r\n')
+            cred_queue.put((user, pwd))
 
     # Wait for all worker processes to finish
     for p in procs:
