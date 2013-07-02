@@ -20,7 +20,7 @@ import sys
 #------------------------------------------------------------------------------
 # Main Program
 #------------------------------------------------------------------------------
-patterns = ['flast, firstl, first.last']
+patterns = ['flast', 'firstl', 'first.last']
 
 if len(sys.argv) != 4:
     print 'Usage: usernames.py firsts lasts pattern'
@@ -34,7 +34,9 @@ if p not in patterns:
     sys.exit()
 
 for last in open(sys.argv[2]):
+    last = last.rstrip('\r\n')
     for first in open(sys.argv[1]):
+        first = first.rstrip('\r\n')
         if p == 'flast':
             print '{0}{1}'.format(first[0], last)
         if p == 'firstl':
