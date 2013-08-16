@@ -79,17 +79,29 @@ def parse_gnmap(file_name):
 
         m = gnmap_re.search(line)
         if m is not None:
+            # Get Hostname
             h = host_re.search(line)
-            p = ports_re.search(line)
-            o = os_re.search(line)
+            if h is None:
+                host = 'Unknown'
+            else:
+                host = h.group(1)
 
+            # Get Ports
+            p = ports_re.search(line)
             if p is not None:
                 ports = parse_ports(p.group(1), broken)
             else:
                 ports = ''
 
-            hosts[h.group(1)] = {'os': o.group(1),
-                                 'ports': ports}
+            # Get OS
+            o = os_re.search(line)
+            if o is None:
+                os = 'Unknown'
+            else:
+                os = o.group(1) 
+
+            hosts[host] = {'os': os,
+                           'ports': ports}
 
     gnmap.close()
 
