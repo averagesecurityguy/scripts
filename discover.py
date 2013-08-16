@@ -48,6 +48,7 @@ import re
 #-----------------------------------------------------------------------------
 report_re = re.compile('Nmap scan report for (.*)')
 gnmap_re = re.compile('Host: (.*)Ports:')
+version_re = re.compile('# Nmap 6.25 scan initiated')
 host_re = re.compile('Host: (.*) .*Ports:')
 ports_re = re.compile('Ports: (.*)\sIgnored State:')
 os_re = re.compile('OS: (.*)\sSeq Index:')
@@ -86,16 +87,24 @@ def save_targets(file_name, ips):
     out.close()
 
 
-def parse_ports(port_str):
+def parse_ports(port_str, broken=False):
+    '''
+    The 6.25 version of Nmap broke the port format by dropping a field. If
+    broken is True then assume we have 6.25 output otherwise do not.
+    '''
     ports = []
     for port in port_str.split(','):
-        num, stat, proto, x, sn, serv, y = port.split('/')
+        if broken == True: 
+            num, stat, proto, x, sn, serv, y = port.split('/')
+        else:
+            num, stat, proto, x, sn, y, serv, z = port.split('/')
+
         if serv == '':
             service = sn
         else:
             service = serv
 
-        s = '{0}/{1} ({2}) - {3}'.format(proto, num, stat, service)
+        s = '{0}/{1} ({2}) - {3}'.format(proto, num.strip(), stat, service)
         ports.append(s)
 
     return ports
@@ -103,8 +112,13 @@ def parse_ports(port_str):
 
 def parse_gnmap(file_name):
     hosts = {}
+    broken = False
     gnmap = open('{0}.gnmap'.format(file_name), 'r')
     for line in gnmap:
+        m = version_re.search(line)
+        if m is not None:
+            broken = True
+
         m = gnmap_re.search(line)
         if m is not None:
             h = host_re.search(line)
@@ -112,7 +126,7 @@ def parse_gnmap(file_name):
             o = os_re.search(line)
 
             if p is not None:
-                ports = parse_ports(p.group(1))
+                ports = parse_ports(p.group(1), broken)
             else:
                 ports = ''
 
@@ -133,7 +147,7 @@ def parse_gnmap(file_name):
 usage = '''
 USAGE:
 
-discover.py IP_addresses <port_list>'
+discover.py IP_addresses <port_list>
 
 Addresses must be a valid Nmap IP address range and ports must be a valid Nmap
 port list. Any ports provided will be added to the default ports that are
