@@ -389,6 +389,12 @@ for report in reports:
                 add_vulnerability(hid, item)
                 continue
 
+            # HTTP Plaintext Authentication
+            # Sniff plaintext auth using ettercap or Cain
+            if plugin == '26194' or plugin == '34850':
+                add_vulnerability(hid, item)
+                continue
+
             # Process Vulnerabilities with a Metasploit Exploit module
             check_metasploit_exploit(hid, item)
 
