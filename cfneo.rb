@@ -49,7 +49,7 @@ end
 
 def get_passwords(data)
 	pwds = Array.new
-    data.scan(/\<string\>([a-zA-Z0-9\+\/]+==)\<\/string>/m) do |m|
+    data.scan(/\<string\>([a-zA-Z0-9\+\/]+[=]+)\<\/string>/m) do |m|
         pwds << m[0]
 	end
     return pwds
