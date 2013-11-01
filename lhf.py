@@ -223,12 +223,19 @@ def process_apache_tomcat(hid, item):
 def process_default_credentials(hid, item):
     text = item.find('plugin_output').text
 
-    u = re.search(r'User.* : (.*)', text).group(1)
-    p = re.search(r'Password : (.*)', text).group(1)
+    if "Account 'sa' has password" in text:
+        sa = re.search(r"Account 'sa' has password '(.*)'", text).group(1)
 
-    note = "User: {0}, Pass: {1}".format(u, p)
+        note = "User: sa, Pass: {0}".format(sa)
 
-    add_vulnerability(hid, item, note)
+        add_vulnerability(hid, item, note)
+    else:
+        u = re.search(r'User.* : (.*)', text).group(1)
+        p = re.search(r'Password : (.*)', text).group(1)
+
+        note = "User: {0}, Pass: {1}".format(u, p)
+
+        add_vulnerability(hid, item, note)
 
 
 ##
