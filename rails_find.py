@@ -90,5 +90,6 @@ if __name__ == '__main__':
         sys.exit()
 
     verbose = False
-    print '[*] processing file {0}'.format(file)
-    process_file(file)
+    filename = sys.argv[1]
+    print '[*] processing file {0}'.format(filename)
+    process_file(filename)
