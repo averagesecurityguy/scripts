@@ -66,7 +66,7 @@ def worker(url, cred_queue, success_queue, domain):
 
 if __name__ == '__main__':
     if len(sys.argv) != 5:
-        print 'USAGE: brute_http_basic.py url userfile passfile domain'
+        print 'USAGE: brute_http_ntlm.py url userfile passfile domain'
         sys.exit()
 
     cred_queue = multiprocessing.Queue()
