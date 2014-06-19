@@ -48,7 +48,7 @@ def get_gravatar(email):
     JSON format.
     '''
     email_hash = hashlib.md5(email).hexdigest()
-    resp = requests.get('http://gravatar.com/{0}.json'.format(email_hash))
+    resp = requests.get('http://en.gravatar.com/{0}.json'.format(email_hash))
     data = {}
     if resp.status_code == 200:
         try:
