@@ -51,7 +51,11 @@ def worker(url, cred_queue, success_queue):
         # Check a set of creds. If successful add them to the success_queue
         # and stop the thread.
         auth = requests.auth.HTTPBasicAuth(creds[0], creds[1])
-        resp = requests.get(url, auth=auth, verify=False)
+        try:
+            resp = requests.get(url, auth=auth, verify=False)
+        except UnicodeDecodeError:
+            continue
+
         if resp.status_code == 401:
             print '[-] Failure: {0}/{1}'.format(creds[0], creds[1])
         else:
