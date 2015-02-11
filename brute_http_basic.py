@@ -53,7 +53,13 @@ def worker(url, cred_queue, success_queue):
         auth = requests.auth.HTTPBasicAuth(creds[0], creds[1])
         try:
             resp = requests.get(url, auth=auth, verify=False)
+
         except UnicodeDecodeError:
+            continue
+
+        except requests.exceptions.ConnectionError:
+            print '[-] Connection error'
+            cred_queue.put(creds)
             continue
 
         if resp.status_code == 401:
