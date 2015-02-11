@@ -35,6 +35,11 @@ import re
 import json
 import HTMLParser
 
+VERIFY = False
+
+if VERIFY is False:
+    requests.packages.urllib3.disable_warnings()
+
 
 # Class to parse HTML responses to find the needed hidden fields and to test
 # for login success or failure.
@@ -74,7 +79,7 @@ def load_config(f):
 def worker(login, action, parser, cred_queue, success_queue):
     print '[*] Starting new worker thread.'
     sess = requests.Session()
-    resp = sess.get(login)
+    resp = sess.get(login, verify=VERIFY)
     parser.feed(resp.content)
 
     while True:
@@ -95,7 +100,7 @@ def worker(login, action, parser, cred_queue, success_queue):
         auth = {config['ufield']: creds[0],
                 config['pfield']: creds[1]}
         auth.update(parser.hidden)
-        resp = sess.post(action, data=auth, verify=False)
+        resp = sess.post(action, data=auth, verify=VERIFY)
         parser.feed(resp.content)
 
         if parser.fail is True:
