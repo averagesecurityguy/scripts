@@ -30,6 +30,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import threading
 import socket
 import errno
 import sys
@@ -131,27 +132,34 @@ ports = [80, 23, 443, 21, 22, 25, 3389, 110, 445, 139, 143, 53, 135, 3306,
          13724, 15001, 15402, 1556, 1583, 1594, 1641, 1658, 16705, 16800,
          16851, 1688, 1719, 1721, 17595, 18018]
 
-print 'Scan Results for {0}:'.format(ip)
-for port in ports:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(2.0)
-    try:
-        s.connect((ip, port))
-        print '[*] {0}:{1} - OPEN'.format(ip, port)
-        s.close()
 
-    except socket.timeout:
-        s.close()
-        continue
+def check_port():
+    endless = True
 
-    except socket.error as e:
-        s.close()
-	if e.errno == errno.ECONNREFUSED:
-            print '[-] {0}:{1} - CLOSED'.format(ip, port)
-        continue
+    while endless:
+        try:
+            port = ports.pop()
+        except IndexError:
+            # List is empty now so get out of the loop
+            endless=False
+            break
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.0)
+        try:
+            s.connect((ip, port))
+            print '[*] {0}:{1} - OPEN'.format(ip, port)
+            s.close()
+        except socket.timeout:
+            s.close()
+        except socket.error as e:
+            s.close()
+            if e.errno == errno.ECONNREFUSED:
+                print '[-] {0}:{1} - CLOSED'.format(ip, port)
+        except:
+            s.close()
 
-    except:
-        s.close()
-        continue
-
-print
+if __name__ == "__main__":
+    for i in range(5):
+        t1=threading.Thread(target=check_port, name="scan-port#%d"%(i))
+        t1.start()
+        t1.join()
