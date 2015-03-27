@@ -31,17 +31,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import threading
+import Queue
 import socket
 import errno
 import sys
+import time
 
-try:
-    ip = sys.argv[1]
-except:
-    print 'Usage: scan.py ip_address'
+TC = 5
 
 # These are the top 1000 ports from the nmap services file.
-ports = [80, 23, 443, 21, 22, 25, 3389, 110, 445, 139, 143, 53, 135, 3306,
+PORTS = [80, 23, 443, 21, 22, 25, 3389, 110, 445, 139, 143, 53, 135, 3306,
          8080, 1723, 111, 995, 993, 5900, 1025, 587, 8888, 199, 1720, 465,
          548, 113, 81, 6001, 10000, 514, 5060, 179, 1026, 2000, 8443, 8000,
          32768, 554, 26, 1433, 49152, 2001, 515, 8008, 49154, 1027, 5666, 646,
@@ -133,33 +132,90 @@ ports = [80, 23, 443, 21, 22, 25, 3389, 110, 445, 139, 143, 53, 135, 3306,
          16851, 1688, 1719, 1721, 17595, 18018]
 
 
-def check_port():
-    endless = True
-
-    while endless:
+def print_results(fin, rq):
+    while not fin.isSet():
         try:
-            port = ports.pop()
-        except IndexError:
-            # List is empty now so get out of the loop
-            endless=False
-            break
+            r = rq.get(timeout=1)
+        except Queue.Empty:
+            # No more results exit the thread.
+            return
+
+        print('{0}:{1} - {2}'.format(r[0], r[1], r[2]))
+
+
+def check_port(fin, ip, pq, rq):
+    while not fin.isSet():
+        try:
+            port = pq.get(timeout=1)
+        except Queue.Empty:
+            # No more ports to check exit the thread.
+            return
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)
+
         try:
             s.connect((ip, port))
-            print '[*] {0}:{1} - OPEN'.format(ip, port)
-            s.close()
+            rq.put((ip, port, 'OPEN'))
+
         except socket.timeout:
-            s.close()
+            rq.put((ip, port, 'TIMEOUT'))
+
         except socket.error as e:
-            s.close()
             if e.errno == errno.ECONNREFUSED:
-                print '[-] {0}:{1} - CLOSED'.format(ip, port)
-        except:
+                rq.put((ip, port, 'CLOSED'))
+
+        finally:
             s.close()
 
-if __name__ == "__main__":
-    for i in range(5):
-        t1=threading.Thread(target=check_port, name="scan-port#%d"%(i))
+
+def usage():
+    print('Usage: scan.py ip_address [ports]')
+    print('If ports is supplied it must be a comma delimited list. If it is')
+    print('not supplied the list of Nmap top 10000 ports will be used.')
+
+    sys.exit(1)
+
+
+if __name__ == '__main__':
+
+    # Process arguments.
+    if len(sys.argv) == 2:
+        ip = sys.argv[1]
+        ports = PORTS
+
+    elif len(sys.argv) == 3:
+        ip = sys.argv[1]
+        try:
+            ports = sys.argv[2].split(',')
+        except ValueError:
+            print 'Ports must be a comma delimited list.'
+            sys.exit(1)
+    else:
+        usage()
+
+
+    # Setup the port and results queues and the finish event.
+    pq = Queue.Queue()
+    rq = Queue.Queue()
+    fin = threading.Event()
+
+    # Load the ports into the queue
+    for p in ports:
+        pq.put(p)
+
+    # Setup and launch threads.
+    for i in range(TC):
+        t1 = threading.Thread(target=check_port, args=(fin, ip, pq, rq))
         t1.start()
-        t1.join()
+
+    t = threading.Thread(target=print_results, args=(fin, rq))
+    t.start()
+
+    # Wait for threads to complete. Handle Ctrl-C if necessary.
+    try:
+        while threading.active_count() > 1:
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        fin.set()
