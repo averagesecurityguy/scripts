@@ -51,7 +51,7 @@ def load_file(filename, insensitive):
 
     items = set(items)
 
-    print '[+] Loaded {0} items.'.format(len(items))
+    print('[+] Loaded {0} items.'.format(len(items)))
     return items
 
 
@@ -66,7 +66,7 @@ def build_filenames(name_list, ext_list):
         ext_list = ['.{0}'.format(ext.lstrip('.')) for ext in ext_list]
         names = set(['{0}{1}'.format(n, e) for n in name_list for e in ext_list])
 
-    print '[+] Built {0} filenames.'.format(len(names))
+    print('[+] Built {0} filenames.'.format(len(names)))
     return names
 
 
@@ -74,8 +74,8 @@ def build_lists(args):
     """
     Load our directory, name, and extensions lists into memory.
     """
-    print '[*] Getting enumeration lists.'
-    print '[+] Loading directory file {0}.'.format(args.directory_file)
+    print('[*] Getting enumeration lists.')
+    print('[+] Loading directory file {0}.'.format(args.directory_file))
     directory_list = load_file(args.directory_file, args.i)
 
     name_list = []
@@ -83,18 +83,18 @@ def build_lists(args):
     filenames = []
 
     if args.n is not None:
-        print '[+] Loading name file {0}.'.format(args.n)
+        print('[+] Loading name file {0}.'.format(args.n))
         name_list = load_file(args.n, args.i)
 
         # Only load extensions if filenames are loaded.
         if args.e is not None:
-            print '[+] Loading extension file {0}.'.format(args.e)
+            print('[+] Loading extension file {0}.'.format(args.e))
             ext_list = load_file(args.e, args.i)
 
     # Only build filnames if we have a file name list.
     filenames = []
     if args.n is not None:
-        print '[+] Building filenames from names and extensions.'
+        print('[+] Building filenames from names and extensions.')
         filenames = build_filenames(name_list, ext_list)
 
     return directory_list, filenames
@@ -112,10 +112,10 @@ def head(url):
         return False
     
     if resp.status_code in [301, 302]:
-        print '[+] Found {0} --> {1} ({2})'.format(url, resp.headers['location'], resp.status_code)
+        print('[+] Found {0} --> {1} ({2})'.format(url, resp.headers['location'], resp.status_code))
         return url
     elif resp.status_code != 404:
-        print '[+] Found {0} ({1})'.format(url, resp.status_code)
+        print('[+] Found {0} ({1})'.format(url, resp.status_code))
         return url
     else:
         return None
@@ -146,21 +146,21 @@ def enumerate(server, directory_list, filenames):
     """
     Enumerate directories and files on the web server.
     """
-    print '\n[*] Enumerating resources.'
+    print('\n[*] Enumerating resources.')
     to_search = [server]
     directories = []
     resources = []
 
-    print '[*] Recursively searching for directories.'
+    print('[*] Recursively searching for directories.')
     while len(to_search) != 0:
         base_url = to_search.pop(0)
-        print '[*] Searching for directories in {0}'.format(base_url)
+        print('[*] Searching for directories in {0}'.format(base_url))
         to_search.extend(check(base_url, directory_list))
         directories.append(base_url)
         resources.append(base_url)
 
     if len(filenames) > 0:
-        print '\n[*] Searching for files.'
+        print('\n[*] Searching for files.')
         for url in directories:
             resources.extend(check(url, filenames, False))
 
@@ -206,7 +206,7 @@ try:
     # Make sure we can connect to the server.
     s = requests.session()
     if head(args.base_url) is None:
-        print 'Unable to connect to {0}.'.format(args.base_url)
+        print('Unable to connect to {0}.'.format(args.base_url))
         sys.exit(1)
 
     directory_list, filenames = build_lists(args)
