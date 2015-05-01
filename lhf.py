@@ -161,10 +161,13 @@ def process_users(hid, item):
 # Extract the shared folder names from the plugin and add them to a share
 # list. Create a new vulnerability and add the share list to the notes field.
 # Nessus lists the shares differently for Windows, AFP and NFS, which is why
-# there are two different regular expressions. NFS is the odd man out.
+# there are two different regular expressions. NFS is the odd man out because
+# there are two plugins with differing formats.
 def process_open_shares(hid, item):
     if item.attrib['pluginID'] == '11356':
         sname = re.compile(r'^\+ (.*)$')
+    elif item.attrib['pluginID'] == '42256':
+        sname = re.compile(r'^  (.*)$')
     else:
         sname = re.compile(r'^- (.*)$')
 
@@ -358,7 +361,7 @@ for report in reports:
                 continue
 
             # Process Open NFS Shares
-            if plugin == '11356':
+            if plugin == '11356' or plugin == '42256':
                 process_open_shares(hid, item)
                 continue
 
