@@ -39,7 +39,7 @@ def list_from_file(filename):
     try:
         f = open(filename, 'r')
     except:
-        print "Could not open file: %s" % f.name()
+        print("Could not open file: {0}".format(filename))
 
     for line in f:
         tmp.append(line.rstrip('\r\n'))
