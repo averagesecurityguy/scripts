@@ -83,6 +83,13 @@ def password_combos(plist):
 
     return pwd
 
+
+def write_password(u, p):
+    if args.p is True:
+        print('{0}'.format(p))
+    else:
+        print('{0} {1}'.format(u, p))
+
 #------------------------------------------------------------------------------
 # Main Program
 #------------------------------------------------------------------------------
@@ -112,6 +119,10 @@ wordgroup.add_argument('-w', action='store', default=None, metavar="WORDS",
                     help='Comma delimited list of words')
 wordgroup.add_argument('-W', action='store', default=None, metavar="WORDFILE",
                     help='File with list of words to transform.')
+parser.add_argument('-x', action='store_true', default=False,
+                    help='Do not use the built in word list.')
+parser.add_argument('-p', action='store_true', default=False,
+                    help='Only write the passwords.')
 
 args = parser.parse_args()
 users = []
@@ -132,20 +143,21 @@ if args.w:
 if args.W:
     words = list_from_file(args.W)
 
-words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
-                "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
-                "spring", "summer", "fall", "security", "123456", "12345678",
-                "abc123", "qwerty", "monkey", "letmein", "dragon", "111111",
-                "baseball", "iloveyou", "trustno1", "1234567", "sunshine",
-                "master", "123123", "shadow", "shad0w", "ashley", "football",
-                "f00tball", "footb@ll", "f00tb@ll", "jesus", "michael", 
-                "ninja", "mustang"])
+if args.x is False:
+    words.extend ([ "password", "passw0rd", "p@ssword", "p@ssw0rd", "welcome",
+                    "welc0me", "w3lcome", "w3lc0me", "changeme", "winter", 
+                    "spring", "summer", "fall", "security", "123456", "12345678",
+                    "abc123", "qwerty", "monkey", "letmein", "dragon", "111111",
+                    "baseball", "iloveyou", "trustno1", "1234567", "sunshine",
+                    "master", "123123", "shadow", "shad0w", "ashley", "football",
+                    "f00tball", "footb@ll", "f00tb@ll", "jesus", "michael", 
+                    "ninja", "mustang"])
 
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
 
-for u in users:
-    for p in pwds:
-        print '%s %s' % (u, p)
-    for p in password_combos([u]):
-        print '%s %s' % (u, p)
+for user in users:
+    for pwd in pwds:
+        write_password(u, p)
+    for pwd in password_combos([u]):
+        write_password(u, p)
