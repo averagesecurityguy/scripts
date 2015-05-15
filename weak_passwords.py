@@ -158,6 +158,6 @@ pwds.extend(password_combos(words))
 
 for user in users:
     for pwd in pwds:
-        write_password(u, p)
-    for pwd in password_combos([u]):
-        write_password(u, p)
+        write_password(user, pwd)
+    for pwd in password_combos([user]):
+        write_password(user, pwd)
