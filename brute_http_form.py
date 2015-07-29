@@ -34,6 +34,7 @@ import Queue
 import re
 import json
 import HTMLParser
+import time
 
 VERIFY = False
 
@@ -110,6 +111,8 @@ def worker(login, action, parser, cred_queue, success_queue):
             success_queue.put(creds)
             return
 
+        time.sleep(config['wait'])
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -124,7 +127,7 @@ if __name__ == '__main__':
     procs = []
 
     # Create one thread for each processor.
-    for i in range(int(config['threads'])):
+    for i in range(config['threads']):
         p = multiprocessing.Process(target=worker,
                                     args=(config['login'],
                                           config['action'],

@@ -32,6 +32,10 @@ import multiprocessing
 import sys
 import Queue
 
+try:
+    requests.packages.urllib3.disable_warnings()
+except:
+    print('Could not disable urllib3 warnings.')
 
 def worker(url, cred_queue, success_queue):
     print '[*] Starting new worker thread.'
