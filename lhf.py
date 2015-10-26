@@ -206,6 +206,19 @@ def process_snmp(hid, item):
 
 
 ##
+# Process the IPMI Cipher Suite Zero Authentication Bypass
+def process_ipmi(hid, item):
+    text = item.find('plugin_output').text
+
+    u = re.search(r'Username : (.*)', text).group(1)
+    p = re.search(r'Password : (.*)', text).group(1)
+
+    note = "User: {0}, Pass: {1}".format(u, p)
+
+    add_vulnerability(hid, item, note)
+
+
+##
 # Extract the URL and login credentials from the plugin. Create a new
 # vulnerability and add the URL and credentials to the notes field.
 def process_apache_tomcat(hid, item):
@@ -379,6 +392,27 @@ for report in reports:
             if plugin == '10264' or plugin == '41028':
                 process_snmp(hid, item)
                 continue
+
+            # Add Windows XP Detection
+            if plugin == '73182':
+                add_vulnerability(hid, item, note="Support for this operating system by Microsoft ended April 8th, 2014.")
+                continue
+
+            # Add VNC Unauthenticated Access
+            if plugin == '26925':
+                add_vulnerability(hid, item, note="The VNC server installed allows an attacker to connect without authentication.")
+                continue
+
+            # Add HP System Management Homepage < 7.0 Multiple Vulns
+            if plugin == '58811':
+                add_vulnerability(hid, item)
+                continue
+
+            # IPMI Cipher Suite Zero Authentication Bypass
+            if plugin == '68931':
+                process_ipmi(hid, item)
+                continue
+
 
             # Process Web Servers
             if plugin == '10107':

