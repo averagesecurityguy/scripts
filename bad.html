@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>Malicious Site</title>
+<meta charset="UTF-8">
+<script>
+function loadData() {
+    var ua = document.getElementById("ua");
+    var os = document.getElementById("os");
+    var loc = document.getElementById("loc");
+
+    ua.innerHTML = navigator.userAgent;
+    os.innerHTML = navigator.platform;
+    
+    getLocation();
+}
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    } else {
+        loc.innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+
+function showPosition(position) {
+    loc.innerHTML = "Lat: " + position.coords.latitude + " Long: " + position.coords.longitude; 
+}
+</script>
+</head>
+<body onload="loadData()">
+<h1>Malicious Site</h1>
+<p><b>User Agent:</b> <span id="ua"></span></p>
+<p><b>Operating System:</b> <span id="os"></span></p>
+<p><b>Location:</b> <span id="loc"></span></p>
+</body>
+</html>
