@@ -47,6 +47,7 @@ import re
 # Compiled Regular Expressions
 #-----------------------------------------------------------------------------
 report_re = re.compile('Nmap scan report for (.*)')
+target_re = re.compile('[0-9]+.[0-9]+.[0-9].[0-9]+[0-9/]*')
 gnmap_re = re.compile('Host: (.*)Ports:')
 version_re = re.compile('# Nmap 6.25 scan initiated')
 host_re = re.compile('Host: (.*) .*Ports:')
@@ -58,9 +59,10 @@ os_re = re.compile('OS: (.*)\sSeq Index:')
 # Functions
 #-----------------------------------------------------------------------------
 def run_command(cmd):
+    print cmd
     p = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+
     resp = p.stdout.read()
     warnings = p.stderr.read()
     p.stdout.close()
@@ -94,7 +96,7 @@ def parse_ports(port_str, broken=False):
     '''
     ports = []
     for port in port_str.split(','):
-        if broken == True: 
+        if broken is True:
             num, stat, proto, x, sn, serv, y = port.split('/')
         else:
             num, stat, proto, x, sn, y, serv, z = port.split('/')
@@ -140,7 +142,7 @@ def parse_gnmap(file_name):
             if o is None:
                 os = 'Unknown'
             else:
-                os = o.group(1) 
+                os = o.group(1)
 
             hosts[host] = {'os': os,
                            'ports': ports}
@@ -195,7 +197,15 @@ if other_ports != '':
 # Run discovery scans against the address range
 #
 print '[*] Running discovery scan against targets {0}'.format(target)
-cmd = 'nmap -sn -PE -n -oA {0} {1}'.format(ping_fname, target)
+
+# Do we have an IP range as our target?
+m = target_re.search(target)
+print m
+if m is None:
+    cmd = 'nmap -sn PE -n -A {0} -iL {0}'.format(ping_fname, target)
+else:
+    cmd = 'nmap -sn -PE -n -oA {0} {1}'.format(ping_fname, target)
+
 warnings, resp = run_command(cmd)
 print_warnings(warnings)
 
