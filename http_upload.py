@@ -33,6 +33,9 @@
 import BaseHTTPServer
 import random
 
+SERVER = '10.230.229.11'
+PORT = 8080
+
 def get_filename():
     chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     fn = ''.join([random.choice(chars) for i in xrange(12)])
@@ -71,6 +74,6 @@ class PostHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     from BaseHTTPServer import HTTPServer
-    server = HTTPServer(('localhost', 8080), PostHandler)
-    print 'Starting server, use <Ctrl-C> to stop'
+    server = HTTPServer((SERVER, PORT), PostHandler)
+    print 'Starting server on {0}:{1}, use <Ctrl-C> to stop'.format(SERVER, PORT)
     server.serve_forever()
