@@ -11,7 +11,7 @@ else
 fi
 
 i=1;
-for f in $(grep -R "BEGIN RSA PRIVATE" /home/* | cut -d':' -f1); do
+for f in $(grep -R "BEGIN RSA PRIVATE KEY" /home/* | cut -d':' -f1); do
     cp $f ssh_key-$i;
     i=$((i+1))
 done
