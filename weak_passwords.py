@@ -61,7 +61,7 @@ def combos(word):
     for i in xrange(10, 23):
         adds.append(str(i))
 
-    for i in xrange(1990, 2013):
+    for i in xrange(1997, 2017):
         adds.append(str(i))
 
     tmp = []
