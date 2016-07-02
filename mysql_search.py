@@ -10,7 +10,7 @@ import pymysql
 # When editing the toi and coi tables keep in mind that auth will match all
 # of the following:
 # auth, authentication, authorization, user_auth, user_authentication
-toi = ['auth', 'authentication', 'user', 'session']
+toi = ['auth', 'user', 'session']
 coi = ['pass', 'ssn', 'usr', 'session', 'hash']
 connect_timeout = 10
 cred_file = 'mysql_creds.txt'
