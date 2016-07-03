@@ -76,9 +76,9 @@ def get_tables(conn):
         return []
 
 
-def get_columns(conn, table):
+def get_columns(conn, db, table):
     if conn is not None:
-        sql = 'show columns from {0}'.format(table)
+        sql = 'show columns from {0}.{1}'.format(db, table)
         results = query(conn, sql)
 
         if results is None:
@@ -126,7 +126,7 @@ def search_db(host, user, pwd, port):
         for table in tables:
             of_interest.append(interesting_table(db, table))
 
-            cols = get_columns(conn, table)
+            cols = get_columns(conn, db, table)
             for col in cols:
                 of_interest.append(interesting_col(db, table, col))
 
