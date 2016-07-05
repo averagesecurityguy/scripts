@@ -24,8 +24,8 @@ def query(conn, sql):
             result = cursor.fetchall()
             return result
 
-    except pymysql.OperationalError as e:
-        print('[-] {0}'.format(e[1]))
+    except pymysql.err.OperationalError as e:
+        print('[-] {0}'.format(e))
         return None
 
     except Exception as e:
@@ -90,6 +90,21 @@ def get_columns(conn, db, table):
         return []
 
 
+def get_db_creds(host, conn):
+    if conn is not None:
+        sql = 'select Host, User, Password from mysql.user'
+        results = query(conn, sql)
+
+        if results is not None:
+            return['{0}-{1}-{2}:{3}'.format(host, r[0], r[1],
+                                            r[2].strip('*')) for r in results]
+        else:
+            return []
+
+    else:
+        return []
+
+
 def get_creds(filename):
     for line in open(filename):
         line = line.strip('\r\n')
@@ -97,53 +112,60 @@ def get_creds(filename):
         yield host, user, pwd, int(port)
 
 
-def interesting_table(db, table):
+def interesting_table(host, db, table):
     for t in toi:
         if t in table:
-            return (db, table)
-        else:
-            return None
+            of_interest.append((host, db, table))
 
 
-def interesting_col(db, table, col):
+def interesting_col(host, db, table, col):
     for c in coi:
         if c in col:
-            return (db, table, col)
-        else:
-            return None
+            of_interest.append((host, db, table, col))
 
 
 def search_db(host, user, pwd, port):
     conn = connect(host, user, pwd, port=port)
-    dbs = get_dbs(conn)
 
-    for db in dbs:
+    print('[*] Getting MySQL credentials.')
+    db_creds.extend(get_db_creds(host, conn))
+
+    dbs = get_dbs(conn)
+    for db in dbs[]:
         print('[*] Searching database {0}'.format(db))
-        of_interest = []
         conn = connect(host, user, pwd, port=port, db=db)
         tables = get_tables(conn)
 
         for table in tables:
-            of_interest.append(interesting_table(db, table))
+            interesting_table(host, db, table)
 
             cols = get_columns(conn, db, table)
             for col in cols:
-                of_interest.append(interesting_col(db, table, col))
+                interesting_col(host, db, table, col)
 
         conn.close()
-        print_interesting(of_interest)
-
-
-def print_interesting(of_interest):
-    for i in of_interest:
-        if i is not None:
-            print('[+] {0}'.format('->'.join(i)))
 
 
 #-----------------------------------------------------------------------------
 # Begin Main Program
 #-----------------------------------------------------------------------------
+db_creds = []
+of_interest = []
+
 for creds in get_creds(cred_file):
     host, user, pwd, port = creds
     print('[*] Searching {0} on port {1}'.format(host, port))
     search_db(host, user, pwd, port)
+
+print()
+print('Interesting Tables and Columns')
+print('==============================')
+print('Server:Database->Table->Column')
+print('------------------------------')
+print('\n'.join(['{0}:{1}'.format(i[0], '->'.join(i[1:])) for i in of_interest]))
+print()
+print('MySQL Hashes')
+print('============')
+print('Server-Host-Username:Password')
+print('-----------------------------')
+print('\n'.join(db_creds))
