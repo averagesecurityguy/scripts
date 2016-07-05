@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# On Kali Linux get the pymysql library by installing python-pymysql
+# On Kali Linux get the pymysql library by installing python3-pymysql
 import pymysql
 
 # User editable variables. Define the tables of interest (toi), the columns of
