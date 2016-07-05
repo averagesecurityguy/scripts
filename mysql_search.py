@@ -39,8 +39,8 @@ def connect(host, user, pwd, db=None, port=3306):
                                database=db, port=port,
                                connect_timeout=connect_timeout)
 
-    except pymysql.OperationalError as e:
-        print('[-] {0}'.format(e[1]))
+    except pymysql.err.OperationalError as e:
+        print('[-] {0}'.format(e))
         return None
 
     except Exception as e:
