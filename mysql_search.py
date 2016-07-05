@@ -131,7 +131,7 @@ def search_db(host, user, pwd, port):
     db_creds.extend(get_db_creds(host, conn))
 
     dbs = get_dbs(conn)
-    for db in dbs[]:
+    for db in dbs:
         print('[*] Searching database {0}'.format(db))
         conn = connect(host, user, pwd, port=port, db=db)
         tables = get_tables(conn)
