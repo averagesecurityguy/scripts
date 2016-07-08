@@ -247,7 +247,7 @@ def process_default_credentials(hid, item):
         add_vulnerability(hid, item, note)
     else:
         u = re.search(r'User.* : (.*)', text).group(1)
-        p = re.search(r'Password : (.*)', text).group(1)
+        p = re.search(r'Pass.* : (.*)', text).group(1)
 
         note = "User: {0}, Pass: {1}".format(u, p)
 
