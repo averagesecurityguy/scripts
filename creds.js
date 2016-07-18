@@ -1,4 +1,11 @@
-try {
+/*
+ * This software is Copyright (c) 2016 AverageSecurityGuy <stephen at averagesecurityguy.info>,
+ * and it is hereby released to the general public under the following terms:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
+ */
+ 
+ try {
     cursor = db.system.users.find();
     while ( cursor.hasNext() ) {
         c = cursor.next();
