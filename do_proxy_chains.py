@@ -40,15 +40,17 @@ import os
 
 """
 This script creates a 512Mb DigitalOcean droplet using a random image in a
-random datacenter. The script will also use a random SSH key if you have more
-than one key associated with your account. Before using this script you will
-need to create a DigitalOcean account, an API key (https://www.digitalocean.com/help/api/),
-and add one or more SSH keys to your account (https://www.digitalocean.com/community/tutorials
+random datacenter. The script will also use the SSH key specified in KEY_NAME.
+Before using this script you will need to create a DigitalOcean account, an
+API key (https://www.digitalocean.com/help/api/), and add the SSH key you
+want to use to your account (https://www.digitalocean.com/community/tutorials
 /how-to-use-ssh-keys-with-digitalocean-droplets). Enter the API key for your
-account below. Other than that, no other changes should be made to the script.
+account below along with the name of the SSH key you added to your account.
+Other than that, no other changes should be made to the script.
 """
 
-api_key = ''
+KEY_NAME = 'proxy'
+API_KEY = ''
 
 
 def send(method, endpoint, data=None):
@@ -59,7 +61,7 @@ def send(method, endpoint, data=None):
     Process the API response and print any error messages.
     """
     headers = {'Content-Type': 'application/json',
-               'Authorization': 'Bearer {0}'.format(api_key)}
+               'Authorization': 'Bearer {0}'.format(API_KEY)}
 
     url = 'https://api.digitalocean.com/v2/{0}'.format(endpoint)
     resp = None
@@ -116,18 +118,20 @@ def get_images():
     return images
 
 
-def get_ssh_keys():
+def get_ssh_key(key_name):
     """
-    Get a list of SSH key names and fingerprints
+    Get a list of SSH key names and fingerprints. Return the fingerprint that
+    matches the name we want.
     """
-    print('[*] Getting SSH keys')
+    print('[*] Getting SSH key {0}'.format(key_name))
     resp = send('GET', 'account/keys')
-    keys = []
 
     if resp is not None:
-        keys = [(s['name'], s['fingerprint']) for s in resp['ssh_keys']]
+        for s in resp['ssh_keys']:
+            if s['name'] == key_name:
+               return s['name'], s['fingerprint']
 
-    return keys
+    return None, None
 
 
 def get_droplet_ip(droplet_id):
@@ -145,20 +149,19 @@ def get_droplet_ip(droplet_id):
     return resp['droplet']['networks']['v4'][0]['ip_address']
 
 
-def create_droplet(images, keys):
+def create_droplet(images, fingerprint):
     """
     Create a new droplet.
     """
     print('[*] Creating new droplet.')
 
     image, regions = random.SystemRandom().choice(images)
-    key = random.SystemRandom().choice(keys)
 
     droplet = {'name': random_str(8),
                'region': random.SystemRandom().choice(regions),
                'size': '512mb',
                'image': image,
-               'ssh_keys': [key[1]],
+               'ssh_keys': [fingerprint],
                'backups': False,
                'ipv6': False,
                'user_data': None,
@@ -170,10 +173,11 @@ def create_droplet(images, keys):
         droplet_id = resp['droplet']['id']
         print('[+] Successfully created droplet {0}.'.format(droplet_id))
         ip = get_droplet_ip(droplet_id)
-        return droplet_id, key[0], ip
+        return droplet_id, ip
+
     else:
         print('[-] Unable to create droplet.')
-        return None, None, None
+        return None, None
 
 
 def delete_droplet(droplet_id):
@@ -206,14 +210,14 @@ def usage():
 if __name__ == '__main__':
     if len(sys.argv) == 4 and sys.argv[1] == 'create':
         images = get_images()
-        keys = get_ssh_keys()
+        name, fingerprint = get_ssh_key(KEY_NAME)
         droplets = {}
 
-        if images != [] and keys != []:
+        if (images != []) and  (fingerprint is not None):
             # Launch our DigitalOcean machines
             for i in range(int(sys.argv[2])):
-                droplet_id, key, ip = create_droplet(images, keys)
-                droplets[droplet_id] = {'ip': ip, 'key': key}
+                droplet_id, ip = create_droplet(images, fingerprint)
+                droplets[droplet_id] = {'ip': ip, 'key': name}
 
             # Save our droplet ids to a file so we can delete them later.
             with open(sys.argv[3], 'w') as f:
@@ -221,7 +225,7 @@ if __name__ == '__main__':
 
             # Launch our SSH Proxies
             port = 10080
-            home = os.path.expanduser('~/')
+            home = os.path.expanduser('~')
             for k, v in droplets.items():
 
                 ssh_key = '{0}/.ssh/{1}'.format(home, v['key'])
@@ -241,23 +245,24 @@ if __name__ == '__main__':
 
             # Write our proxy chains file
             with open('/etc/proxychains.conf', 'w') as f:
-                f.write('[ProxyList]\n')
                 f.write('random_chain\n')
                 f.write('chain_len=1\n')
+                f.write('[ProxyList]\n')
                 for k, v in droplets.items():
-                    f.write('socks5 {0} {1}\n'.format(v['ip'], v['port']))
+                    f.write('socks5 127.0.0.1 {0}\n'.format(v['port']))
 
 
     elif len(sys.argv) == 3 and sys.argv[1] == 'delete':
-        with open(sys.argv[2]) as f:
-            for line in f:
-                delete_droplet(line.rstrip('\r\n'))
-
         try:
+            with open(sys.argv[2]) as f:
+                for line in f:
+                    delete_droplet(line.rstrip('\r\n'))
+
             print('[*] Removing {0}'.format(sys.argv[2]))
             os.remove(sys.argv[2])
             print('[*] Removing /etc/proxychains.conf')
             os.remove('/etc/proxychains.conf')
+
         except FileNotFoundError as e:
             print('[-] {0}'.format(e))
 
