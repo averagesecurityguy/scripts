@@ -48,7 +48,7 @@ and add one or more SSH keys to your account (https://www.digitalocean.com/commu
 account below. Other than that, no other changes should be made to the script.
 """
 
-api_key = '887e1d32e387c056db3e4c8bf57c3a5212faa8f99cb7a107fa44c5738baaf4c2'
+api_key = ''
 
 
 def send(method, endpoint, data=None):
