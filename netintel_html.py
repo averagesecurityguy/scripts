@@ -330,6 +330,7 @@ html += dict_to_html('headers', 'HTTP Headers', 'headers')
 html += dict_to_html('agents', 'User Agent Responses', 'responses')
 html += list_to_html('links', 'Domain Links', 'links')
 html += list_to_html('dorks', 'Google Dorks', 'links')
+html += list_to_html('emails', 'Email Addresses', 'emails')
 html += """
 <footer>
 <p>Report produced from data at <a href="https://pro.netintel.net">NetIntel Pro</a></p>
