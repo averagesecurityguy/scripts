@@ -7,7 +7,7 @@ import json
 import argparse
 
 
-API_KEY = "6KQIy4-2hEVWFNhneWXvMQDV"
+API_KEY = ""
 
 
 def get_records(url):
