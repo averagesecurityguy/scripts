@@ -7,7 +7,7 @@ import json
 import argparse
 
 
-API_KEY = ""
+API_KEY = "6KQIy4-2hEVWFNhneWXvMQDV"
 
 
 def get_records(url):
@@ -188,6 +188,26 @@ def dict_to_html(key, title, name):
     return h
 
 
+def domains_to_html(key, title):
+    h = ''
+    if data.get(key) is not None:
+        h += header('h2', title)
+        records = get_records(data[key])
+        domains = []
+
+        for r in records['domains']:
+            if ((r.get('address')is None) and (r.get('nameserver') is None) and (r.get('mxrecord') is None)):
+                domains.append('{0} (Unregistered)'.format(r['domain']))
+            else:
+                s = '{0} (Address: {1}, NS: {2}, MX: {3})'.format(r['domain'],
+                        r['address'], r['nameserver'], r['mxrecord'])
+                domains.append(s)
+
+        h += ul(domains)
+
+    return h
+
+
 #-----------------------------------------------------------------------------
 # Main Program
 #-----------------------------------------------------------------------------
@@ -205,6 +225,12 @@ if args.query_type.lower() not in ['domain', 'report']:
 data = {}
 domain = ''
 if args.query_type == 'domain':
+    if API_KEY == '':
+        print('You will need to enter your API key to perform this query.')
+        print('If you do not have an API key you can purchase one at:')
+        print('https://pro.netintel.net/purchase.html')
+        sys.exit(1)
+
     domain = args.query_value
     url = 'https://pro.netintel.net/lookup.php'
 
@@ -331,6 +357,7 @@ html += dict_to_html('agents', 'User Agent Responses', 'responses')
 html += list_to_html('links', 'Domain Links', 'links')
 html += list_to_html('dorks', 'Google Dorks', 'links')
 html += list_to_html('emails', 'Email Addresses', 'emails')
+html += domains_to_html('altdomains', 'Alternative Domains')
 html += """
 <footer>
 <p>Report produced from data at <a href="https://pro.netintel.net">NetIntel Pro</a></p>
