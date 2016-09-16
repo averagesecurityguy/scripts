@@ -18,8 +18,8 @@ for host in ${hosts[@]}; do
     fi
 
     if [ "$2" = "https" ]; then
-        gobuster -q -e -m dir -u https://$host -w /usr/share/seclists/Discovery/Web_Content/raft-small-directories.txt;
-        gobuster -q -e -m dir -u https://$host -w /usr/share/seclists/Discovery/Web_Content/raft-small-files.txt;
+        $gb -u https://$host -w $dl;
+        $gb -u https://$host -w $wl;
     fi
 
     echo "";
