@@ -44,15 +44,17 @@ class HostItem():
         self.ports = []
 
     def __str__(self):
-        s  = '{0}'.format(ip)
-        s += '{0}'.format('=' * len(ip))
-        for port in ports:
-            s += '{0}/{1}'.format(port[0], port[1])
-            s += '{0}'.format('-' * len('{0}/{1}'.format(port[0], port[1])))
-            s += '{0}'.format(port[2])
-            s += '{0}'.format(port[3])
-            s += '\n'
-        s += '\n\n'
+        s  = '{0}\n'.format(self.ip)
+        s += '{0}\n'.format('=' * len(self.ip))
+
+        for port in self.ports:
+            s += '{0}/{1}: '.format(port[0], port[1])
+            if port[2] != '':
+                s += 'Service: {0} '.format(port[2])
+            if port[3] != '':
+                s += 'Banner: {0}'.format(port[3])
+
+        s += '\n'
 
         return s
 
@@ -91,11 +93,16 @@ def get_service(service):
     If the product attribute it set then use it otherwise use the name
     attribute.
     """
-    name = service.attrib.get('product', None)
-    if name is None:
-        name = service.attrib.get('name', '')
+    if service is None:
+        name = ''
+        banner = ''
 
-    banner = service.attrib.get('banner', '')
+    else:
+        name = service.attrib.get('product', None)
+        if name is None:
+            name = service.attrib.get('name', '')
+
+        banner = service.attrib.get('banner', '')
 
     return name, banner
 
@@ -138,11 +145,11 @@ if __name__ == '__main__':
     if sys.argv[1] == '-h':
         usage()
     else:
-        file_name, mscan = open_nmap_file(sys.argv[1])
+        file_name, mscan = open_masscan_file(sys.argv[1])
 
     ##
-    # Find all the host objects in the Nmap file
-    hosts = nmap.findall('host')
+    # Find all the host objects in the Masscan file
+    hosts = mscan.findall('host')
 
     ##
     # Process each of the hosts
@@ -151,6 +158,6 @@ if __name__ == '__main__':
         ports = host.findall('ports/port')
 
         if ports != []:
-            h = create_host(address ports)
+            h = create_host(address, ports)
             print(h)
 
