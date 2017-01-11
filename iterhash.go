@@ -1,3 +1,21 @@
+/*
+Copyright 2017 AverageSecurityGuy (Stephen Haywood)
+
+iterhash takes a string and hashes it the specified number of times until a
+match is found of the specified count is reached. This can be used to
+determine if a password is being iteratively hashed instead of hashed with a
+key derivation formula. Supports MD5, SHA1, and SHA256.
+
+Usage:
+
+go run iterhash.go plaintext iterations hashtype hash
+
+or
+
+go build iterhash.go
+./iterhash plaintext iterations hashtype hash
+*/
+
 package main
 
 import (
