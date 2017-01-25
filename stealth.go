@@ -21,7 +21,7 @@ func usage() {
 }
 
 func build() {
-    out, err := exec.Command("go", "build", "shell.go").Output()
+    _, err := exec.Command("go", "build", "shell.go").Output()
 
     if err != nil {
         fmt.Println("Could not build shell.")
