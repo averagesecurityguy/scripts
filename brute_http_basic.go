@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2013, AverageSecurityGuy
+Copyright (c) 2017, AverageSecurityGuy
 # All rights reserved.
 
 Simple Go script to test a username and password list against an HTTP Basic
