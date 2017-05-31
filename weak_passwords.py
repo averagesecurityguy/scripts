@@ -42,9 +42,22 @@ def list_from_file(filename):
         print("Could not open file: {0}".format(filename))
 
     for line in f:
-        tmp.append(line.rstrip('\r\n'))
+        yield line.rstrip('\r\n')
 
-    return tmp
+
+def simple_combos(word):
+    adds = []
+
+    adds.extend(['!', '@', '#', '$', '%', '^', '&', '*', '?'])
+
+    for i in xrange(0, 10):
+        adds.append(str(i))
+        adds.append("0" + str(i))
+
+    yield word
+
+    for a in adds:
+        yield word + a
 
 
 def combos(word):
@@ -64,24 +77,24 @@ def combos(word):
     for i in xrange(2000, 2019):
         adds.append(str(i))
 
-    tmp = []
-
-    tmp.append(word)
-    tmp.append(word + word)
+    yield word
+    yield word + word
     for a in adds:
-        tmp.append(word + a)
-        tmp.append(a + word)
-
-    return tmp
+        yield word + a
+        yield a + word
 
 
 def password_combos(plist):
-    pwd = []
     for p in plist:
-        pwd.extend(combos(p))
-        pwd.extend(combos(p.capitalize()))
+        if args.s is True:
+            for pwd in simple_combos(p.capitalize()):
+                yield pwd
+        else:
+            for pwd in combos(p):
+                yield pwd
+            for pwd in combos(p.capitalize()):
+                yield pwd
 
-    return pwd
 
 def write_userpass(u, p):
     print('{0} {1}'.format(u, p))
@@ -123,6 +136,8 @@ parser.add_argument('-x', action='store_true', default=False,
                     help='Do not use the built in word list.')
 parser.add_argument('-p', action='store_true', default=False,
                     help='Only write the passwords.')
+parser.add_argument('-s', action='store_true', default=False,
+                    help='A simpler set of combinations.')
 
 args = parser.parse_args()
 users = []
@@ -159,7 +174,7 @@ pwds.extend(password_combos(words))
 
 if users == []:
     for pwd in pwds:
-        write_passw(pwd)
+        write_pass(pwd)
 else:
     for user in users:
         for pwd in pwds:
