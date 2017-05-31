@@ -83,12 +83,12 @@ def password_combos(plist):
 
     return pwd
 
+def write_userpass(u, p):
+    print('{0} {1}'.format(u, p))
 
-def write_password(u, p):
-    if args.p is True:
-        print('{0}'.format(p))
-    else:
-        print('{0} {1}'.format(u, p))
+
+def write_pass(p):
+    print('{0}'.format(p))
 
 #------------------------------------------------------------------------------
 # Main Program
@@ -104,7 +104,7 @@ Pentesting Class" presented at Derbycon 2011. The passwords are transformed
 using some of the best64 rules from hashcat.
 """
 parser = argparse.ArgumentParser(description=desc)
-usergroup = parser.add_mutually_exclusive_group(required=True)
+usergroup = parser.add_mutually_exclusive_group(required=False)
 usergroup.add_argument('-u', action='store', default=None, metavar="USERS",
                     help='Comma delimited list of usernames')
 usergroup.add_argument('-U', action='store', default=None, metavar="USERFILE",
@@ -130,10 +130,11 @@ comps = []
 pwds = []
 words = []
 
-if args.u:
-    users.extend(args.u.split(","))
-if args.U:
-    users = list_from_file(args.U)
+if args.p is False:
+    if args.u:
+        users.extend(args.u.split(","))
+    if args.U:
+        users = list_from_file(args.U)
 if args.c:
     comps.extend(args.c.split(","))
 if args.C:
@@ -156,8 +157,12 @@ if args.x is False:
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
 
-for user in users:
+if users == []:
     for pwd in pwds:
-        write_password(user, pwd)
-    for pwd in password_combos([user]):
-        write_password(user, pwd)
+        write_passw(pwd)
+else:
+    for user in users:
+        for pwd in pwds:
+            write_userpass(user, pwd)
+        for pwd in password_combos([user]):
+            write_userpass(user, pwd)
