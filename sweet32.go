@@ -3,6 +3,8 @@ package main
 import (
     "os"
     "fmt"
+    "net"
+    "time"
     "crypto/tls"
 )
 
@@ -27,6 +29,35 @@ func cipherstring(i uint16) string {
 }
 
 
+func getConnection(server string, conf *tls.Config, timeout time.Duration) (*tls.Conn) {
+    // Create a TCP connection.
+    conn, err := net.DialTimeout("tcp", server, timeout)
+    check(err)
+    fmt.Printf("Successfully connected to: %s\n", conn.RemoteAddr())
+
+    // Create TLS connection using our TCP connection and set a deadline
+    // before attempting the handshake. This will ensure the handshake times
+    // out.
+    tlsconn := tls.Client(conn, conf)
+    tlsconn.SetDeadline(time.Now().Add(timeout))
+
+    err = tlsconn.Handshake()
+    if err != nil {
+        fmt.Println("Unable to complete TLS handshake.")
+        os.Exit(0)
+    }
+
+    // Reset the deadline to zero.
+    tlsconn.SetDeadline(time.Time{})
+
+    // Document cipher suite
+    state := tlsconn.ConnectionState()
+    fmt.Printf("Using: %s\n", cipherstring(state.CipherSuite))
+
+    return tlsconn
+}
+
+
 func main() {
 
     if len(os.Args) != 3 {
@@ -37,6 +68,7 @@ func main() {
     host := os.Args[1]
     port := os.Args[2]
     server := fmt.Sprintf("%s:%s", host, port)
+    timeout := 30 * time.Second
 
 
     // Build TLS Config
@@ -48,18 +80,20 @@ func main() {
         },
     }
 
-    conn, err := tls.Dial("tcp", server, conf)
-    check(err)
+    // Make our connection
+    conn := getConnection(server, conf, timeout)
     defer conn.Close()
 
-    state := conn.ConnectionState()
-    fmt.Printf("Successfully connected to: %s\n", conn.RemoteAddr())
-    fmt.Printf("Using: %s\n", cipherstring(state.CipherSuite))
-
-
+    // Write data to the connection.
     for i := 1; i <= 10000; i++ {
         send := []byte(fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\n\r\n", server))
-        _, err = conn.Write(send)
+        _, err := conn.Write(send)
+        if err != nil {
+            fmt.Println("\n")
+            fmt.Println(err)
+            fmt.Printf("Cannot write to connection after %d requests.\n", i)
+            break
+        }
 
         resp := make([]byte, 512)
         _, err = conn.Read(resp)
