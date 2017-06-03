@@ -5,9 +5,23 @@ import (
     "fmt"
     "net"
     "time"
+    "flag"
     "crypto/tls"
 )
 
+var verbose bool
+
+func vprint(msg string) {
+    if verbose {
+        fmt.Printf(msg)
+    } 
+}
+
+
+func banner() {
+    fmt.Println("            [      Sweet Tea     ]            ")
+    fmt.Println("            [ The SWEET32 Tester ]            ")
+}
 
 func check(e error) {
     if e != nil {
@@ -33,7 +47,7 @@ func getConnection(server string, conf *tls.Config, timeout time.Duration) (*tls
     // Create a TCP connection.
     conn, err := net.DialTimeout("tcp", server, timeout)
     check(err)
-    fmt.Printf("Successfully connected to: %s\n", conn.RemoteAddr())
+    vprint(fmt.Sprintf("[+] Successfully connected to: %s\n", conn.RemoteAddr()))
 
     // Create TLS connection using our TCP connection and set a deadline
     // before attempting the handshake. This will ensure the handshake times
@@ -43,7 +57,7 @@ func getConnection(server string, conf *tls.Config, timeout time.Duration) (*tls
 
     err = tlsconn.Handshake()
     if err != nil {
-        fmt.Println("Unable to complete TLS handshake.")
+        fmt.Println("[-] Unable to complete TLS handshake.")
         os.Exit(0)
     }
 
@@ -52,24 +66,32 @@ func getConnection(server string, conf *tls.Config, timeout time.Duration) (*tls
 
     // Document cipher suite
     state := tlsconn.ConnectionState()
-    fmt.Printf("Using: %s\n", cipherstring(state.CipherSuite))
+    vprint(fmt.Sprintf("[+] Using: %s\n", cipherstring(state.CipherSuite)))
 
     return tlsconn
 }
 
 
 func main() {
+    var host string
+    var port string
 
-    if len(os.Args) != 3 {
-        fmt.Println("Usage go run sweet32.go server port")
+    flag.BoolVar(&verbose, "v", false, "Verbose output.")
+    flag.StringVar(&host, "h", "", "IP address or hostname of web server.")
+    flag.StringVar(&port, "p", "", "Port number of web server.")
+
+    flag.Parse()
+
+    if host == "" || port == "" {
+        flag.Usage()
         os.Exit(0)
     }
 
-    host := os.Args[1]
-    port := os.Args[2]
     server := fmt.Sprintf("%s:%s", host, port)
     timeout := 30 * time.Second
 
+    banner()
+    fmt.Printf("[*] Testing connection to %s.\n", server)
 
     // Build TLS Config
     conf := &tls.Config{
@@ -81,6 +103,7 @@ func main() {
     }
 
     // Make our connection
+
     conn := getConnection(server, conf, timeout)
     defer conn.Close()
 
@@ -89,30 +112,22 @@ func main() {
         send := []byte(fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\n\r\n", server))
         _, err := conn.Write(send)
         if err != nil {
-            fmt.Println("\n")
-            fmt.Println(err)
-            fmt.Printf("Cannot write to connection after %d requests.\n", i)
+            vprint("\n")
+            fmt.Printf("[+] Connection closed after %d requests. Server is not vulnerable.\n", i)
             break
         }
 
         resp := make([]byte, 512)
-        _, err = conn.Read(resp)
-        if err != nil {
-            if err.Error() == "EOF" {
-                fmt.Println("\n")
-                fmt.Printf("Connection closed after %d requests. Server is not vulnerable.\n", i)
-                break
-            }
-        }
+        conn.Read(resp)
 
-        if i % 20 == 0 {
+        if i % 20 == 0 && verbose {
             fmt.Printf(".")
         }
 
         if i == 10000 {
             fmt.Println("\n")
-            fmt.Println("The server accepted 10000 requests. Server is likely vulnerable.")
+            fmt.Println("[-] The server accepted 10000 requests. Server is likely vulnerable.")
         }
     }
-    fmt.Println("\n")
+    fmt.Println("")
 }
