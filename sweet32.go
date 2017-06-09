@@ -19,8 +19,7 @@ func vprint(msg string) {
 
 
 func banner() {
-    fmt.Println("            [      Sweet Tea     ]            ")
-    fmt.Println("            [ The SWEET32 Tester ]            ")
+    fmt.Println("            [ The SWEET32 Tester ]")
 }
 
 func check(e error) {
@@ -73,25 +72,25 @@ func getConnection(server string, conf *tls.Config, timeout time.Duration) (*tls
 
 
 func main() {
-    var host string
+    var server string
     var port string
 
     flag.BoolVar(&verbose, "v", false, "Verbose output.")
-    flag.StringVar(&host, "h", "", "IP address or hostname of web server.")
+    flag.StringVar(&server, "s", "", "IP address or hostname of web server.")
     flag.StringVar(&port, "p", "", "Port number of web server.")
 
     flag.Parse()
 
-    if host == "" || port == "" {
+    if server == "" || port == "" {
         flag.Usage()
         os.Exit(0)
     }
 
-    server := fmt.Sprintf("%s:%s", host, port)
+    target := fmt.Sprintf("%s:%s", server, port)
     timeout := 30 * time.Second
 
     banner()
-    fmt.Printf("[*] Testing connection to %s.\n", server)
+    fmt.Printf("[*] Testing connection to %s.\n", target)
 
     // Build TLS Config
     conf := &tls.Config{
@@ -104,29 +103,31 @@ func main() {
 
     // Make our connection
 
-    conn := getConnection(server, conf, timeout)
+    conn := getConnection(target, conf, timeout)
     defer conn.Close()
 
     // Write data to the connection.
     for i := 1; i <= 10000; i++ {
-        send := []byte(fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\n\r\n", server))
+        send := []byte(fmt.Sprintf("GET / HTTP/1.1\r\nHost: %s\r\n\r\n", target))
         _, err := conn.Write(send)
         if err != nil {
             vprint("\n")
-            fmt.Printf("[+] Connection closed after %d requests. Server is not vulnerable.\n", i)
+            vprint(fmt.Sprintf("[+] Connection closed after %d requests.\n", i))
+            fmt.Printf("[+] %s is not vulnerable.\n", server)
             break
         }
 
         resp := make([]byte, 512)
         conn.Read(resp)
 
-        if i % 20 == 0 && verbose {
-            fmt.Printf(".")
+        if i % 20 == 0 {
+            vprint(".")
         }
 
         if i == 10000 {
-            fmt.Println("\n")
-            fmt.Println("[-] The server accepted 10000 requests. Server is likely vulnerable.")
+            vprint("\n")
+            vprint(fmt.Sprintf("[-] The server accepted 10000 requests.\n"))
+            fmt.Printf("[-] %s is likely vulnerable.\n", server)
         }
     }
     fmt.Println("")
