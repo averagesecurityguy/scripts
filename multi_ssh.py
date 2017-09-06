@@ -6,6 +6,7 @@ import sys
 import time
 import Queue
 
+PORT = 22222
 
 def worker(cred_queue, success_queue):
     print('Starting new worker thread.')
@@ -18,10 +19,13 @@ def worker(cred_queue, success_queue):
         try:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(creds[0], username=creds[1], password=creds[2])
+            ssh.connect(creds[0], username=creds[1], password=creds[2], port=PORT)
             success_queue.append((creds[0], creds[1], creds[2]))
+            ssh.close()
+
         except paramiko.AuthenticationException:
             print 'Fail: {0} {1} {2}'.format(creds[0], creds[1], creds[2])
+
         except Exception, e:
             print 'Fail: {0} {1}'.format(creds[0], str(e))
             cred_queue.put(creds)
