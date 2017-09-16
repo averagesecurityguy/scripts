@@ -11,22 +11,21 @@ $ go run censys_domain.go domain
 package main
 
 import (
-	"os"
-    "fmt"
-	"time"
-	"sort"
-    "bytes"
-	"errors"
-	"strings"
-    "net/http"
-    "io/ioutil"
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"sort"
+	"strings"
+	"time"
 )
 
-
 const url = "https://censys.io/api/v1/search/certificates"
-const uid = "3d2d8e41-65d4-4b88-b80d-e9cbdda60dbb"
-const secret = "iU9fLrFd9YlDUGfGFYwlxV7TR8y8Wisp"
+const uid = ""
+const secret = ""
 
 // The Query struct is used to create a query JSON object for Censys searches.
 type Query struct {
@@ -39,17 +38,17 @@ type Query struct {
 // The Result struct holds a single result from the Censys JSON response.
 type Result struct {
 	CommonNames []string `json:"parsed.subject.common_name"`
-    DnsNames    []string `json:"parsed.extensions.subject_alt_name.dns_names"`
+	DnsNames    []string `json:"parsed.extensions.subject_alt_name.dns_names"`
 	Names       []string `json:"parsed.names"`
 }
 
 // The Metadata struct holds metadata information from the Censys JSON response.
 type Metadata struct {
-	Count  int    `json:"count"`
-	Query  string `json:"query"`
-	Time   int    `json:"backend_time"`
-	Page   int    `json:"page"`
-	Pages  int    `json:"pages"`
+	Count int    `json:"count"`
+	Query string `json:"query"`
+	Time  int    `json:"backend_time"`
+	Page  int    `json:"page"`
+	Pages int    `json:"pages"`
 }
 
 // The Response struct holds a Censys JSON response.
@@ -67,9 +66,7 @@ type Research struct {
 	Hosts    []string
 }
 
-
 var research Research
-
 
 // The In function determines if a string is in a slice of strings.
 func in(items []string, item string) bool {
@@ -78,11 +75,10 @@ func in(items []string, item string) bool {
 
 	if i < len(items) && items[i] == item {
 		return true
-    }
+	}
 
 	return false
 }
-
 
 // Pop removes the first item in the slice and returns the item and the new
 // slice.
@@ -93,20 +89,19 @@ func pop(items []string) ([]string, string) {
 	return items, item
 }
 
-
 // The request function makes a Censys request and processes the response. If
 // there are no errors a response struct is returned.
 func request(data *bytes.Buffer) (Response, error) {
 	var response Response
 
-    client := &http.Client{}
-    req, err := http.NewRequest("POST", url, data)
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
 		return response, err
 	}
 
-    req.SetBasicAuth(uid, secret)
-    resp, err := client.Do(req)
+	req.SetBasicAuth(uid, secret)
+	resp, err := client.Do(req)
 	if err != nil {
 		return response, err
 	}
@@ -119,10 +114,10 @@ func request(data *bytes.Buffer) (Response, error) {
 
 	if resp.StatusCode == 429 {
 		return response, errors.New("Rate limit exceeded. Please wait and try again.")
-    } else if resp.StatusCode == 500 {
-        return response, errors.New("Internal Server Error.")
-    } else {
-        err := json.Unmarshal(body, &response)
+	} else if resp.StatusCode == 500 {
+		return response, errors.New("Internal Server Error.")
+	} else {
+		err := json.Unmarshal(body, &response)
 		if err != nil {
 			return response, err
 		}
@@ -131,7 +126,6 @@ func request(data *bytes.Buffer) (Response, error) {
 	time.Sleep(3 * time.Second)
 	return response, nil
 }
-
 
 // The search function queries the Censys API for subdomains related to the
 // given domain.
@@ -165,14 +159,13 @@ func search(domain string) ([]Result, error) {
 		pages = resp.Metadata.Pages
 	}
 
-    research.Searched = append(research.Searched, domain)
+	research.Searched = append(research.Searched, domain)
 	return results, nil
 }
 
-
 // Process the results and update the subdomains map with the results.
 func process(results []Result, domain string) {
-    var subs []string
+	var subs []string
 
 	for _, r := range results {
 		if len(r.CommonNames) == 0 {
@@ -186,7 +179,7 @@ func process(results []Result, domain string) {
 		}
 	}
 
-    // Add new subdomains to our Hosts and Search slices.
+	// Add new subdomains to our Hosts and Search slices.
 	for _, sub := range subs {
 		if !in(research.Hosts, sub) {
 			research.Hosts = append(research.Hosts, sub)
@@ -198,7 +191,6 @@ func process(results []Result, domain string) {
 	}
 }
 
-
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: censys_domain.go domain")
@@ -209,12 +201,12 @@ func main() {
 	research.Domain = domain
 	fmt.Printf("[*] Iteratively searching for subdomains for %s\n", domain)
 
-    results, err := search(domain)
+	results, err := search(domain)
 	if err != nil {
 		fmt.Printf("\n[-] Error: %s", err)
 	}
 
-    process(results, domain)
+	process(results, domain)
 
 	for {
 		if len(research.Search) == 0 {
@@ -231,7 +223,7 @@ func main() {
 		process(results, domain)
 	}
 
-    fmt.Println("")
+	fmt.Println("")
 	fmt.Printf("Subdomains for %s\n", research.Domain)
 	fmt.Println(strings.Join(research.Hosts, "\n"))
 }
