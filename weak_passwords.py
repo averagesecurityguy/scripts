@@ -42,9 +42,22 @@ def list_from_file(filename):
         print("Could not open file: {0}".format(filename))
 
     for line in f:
-        tmp.append(line.rstrip('\r\n'))
+        yield line.rstrip('\r\n')
 
-    return tmp
+
+def simple_combos(word):
+    adds = []
+
+    adds.extend(['!', '@', '#', '$', '%', '^', '&', '*', '?'])
+
+    for i in xrange(0, 10):
+        adds.append(str(i))
+        adds.append("0" + str(i))
+
+    yield word
+
+    for a in adds:
+        yield word + a
 
 
 def combos(word):
@@ -64,31 +77,31 @@ def combos(word):
     for i in xrange(2000, 2019):
         adds.append(str(i))
 
-    tmp = []
-
-    tmp.append(word)
-    tmp.append(word + word)
+    yield word
+    yield word + word
     for a in adds:
-        tmp.append(word + a)
-        tmp.append(a + word)
-
-    return tmp
+        yield word + a
+        yield a + word
 
 
 def password_combos(plist):
-    pwd = []
     for p in plist:
-        pwd.extend(combos(p))
-        pwd.extend(combos(p.capitalize()))
+        if args.s is True:
+            for pwd in simple_combos(p.capitalize()):
+                yield pwd
+        else:
+            for pwd in combos(p):
+                yield pwd
+            for pwd in combos(p.capitalize()):
+                yield pwd
 
-    return pwd
+
+def write_userpass(u, p):
+    print('{0} {1}'.format(u, p))
 
 
-def write_password(u, p):
-    if args.p is True:
-        print('{0}'.format(p))
-    else:
-        print('{0} {1}'.format(u, p))
+def write_pass(p):
+    print('{0}'.format(p))
 
 #------------------------------------------------------------------------------
 # Main Program
@@ -104,7 +117,7 @@ Pentesting Class" presented at Derbycon 2011. The passwords are transformed
 using some of the best64 rules from hashcat.
 """
 parser = argparse.ArgumentParser(description=desc)
-usergroup = parser.add_mutually_exclusive_group(required=True)
+usergroup = parser.add_mutually_exclusive_group(required=False)
 usergroup.add_argument('-u', action='store', default=None, metavar="USERS",
                     help='Comma delimited list of usernames')
 usergroup.add_argument('-U', action='store', default=None, metavar="USERFILE",
@@ -123,6 +136,8 @@ parser.add_argument('-x', action='store_true', default=False,
                     help='Do not use the built in word list.')
 parser.add_argument('-p', action='store_true', default=False,
                     help='Only write the passwords.')
+parser.add_argument('-s', action='store_true', default=False,
+                    help='A simpler set of combinations.')
 
 args = parser.parse_args()
 users = []
@@ -130,10 +145,11 @@ comps = []
 pwds = []
 words = []
 
-if args.u:
-    users.extend(args.u.split(","))
-if args.U:
-    users = list_from_file(args.U)
+if args.p is False:
+    if args.u:
+        users.extend(args.u.split(","))
+    if args.U:
+        users = list_from_file(args.U)
 if args.c:
     comps.extend(args.c.split(","))
 if args.C:
@@ -156,8 +172,12 @@ if args.x is False:
 pwds.extend(password_combos(comps))
 pwds.extend(password_combos(words))
 
-for user in users:
+if users == []:
     for pwd in pwds:
-        write_password(user, pwd)
-    for pwd in password_combos([user]):
-        write_password(user, pwd)
+        write_pass(pwd)
+else:
+    for user in users:
+        for pwd in pwds:
+            write_userpass(user, pwd)
+        for pwd in password_combos([user]):
+            write_userpass(user, pwd)
