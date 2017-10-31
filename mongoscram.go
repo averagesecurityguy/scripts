@@ -15,6 +15,35 @@ import (
     "golang.org/x/crypto/pbkdf2"
 )
 
+type Hash struct {
+    User []byte
+    Salt []byte
+    Key  string
+}
+
+func NewHash(hash string) *Hash {
+    h := new(Hash)
+
+    parts := strings.Split(hash, ":")
+    h.User = []byte(parts[0])
+
+    parts = strings.Split(parts[2], "$")
+    salt := parts[3]
+    h.Key = parts[4]
+
+    for {
+        if len(salt) % 3 == 0 { break }
+        salt = salt + "="
+    }
+
+    //Decode our salt
+    decoded, err := base64.StdEncoding.DecodeString(salt)
+    if err == nil {
+        h.Salt = decoded
+    }
+
+    return h
+}
 
 func calculate_scram(pwd, salt []byte) string {
     /*
@@ -40,40 +69,58 @@ func calculate_scram(pwd, salt []byte) string {
 }
 
 
-func verify_scram(user, pwd, salt []byte, stored_key string) {
+func verify_scram(hash *Hash, pwd []byte) {
     /*
     Verify that the username/password combination matches the stored_key.
     */
     var userpass bytes.Buffer
-    userpass.Write(user)
+
+    userpass.Write(hash.User)
     userpass.WriteString(":mongo:")
     userpass.Write(pwd)
 
-    hash := calculate_scram(userpass.Bytes(), salt)
+    scram := calculate_scram(userpass.Bytes(), hash.Salt)
 
-    if hash == stored_key {
-        fmt.Printf("%s:%s\n", user, pwd)
+    if scram == hash.Key {
+        fmt.Printf("%s:%s\n", hash.User, pwd)
     }
+}
+
+// Parse the given file to get the mongo-scram hashes
+func parse(filename string) []*Hash {
+    var hashes []*Hash
+
+    data, err := os.Open(filename)
+    if err != nil {
+        fmt.Printf("Could not open file: %s\n", filename)
+    }
+
+    defer data.Close()
+
+    scan := bufio.NewScanner(data)
+    for scan.Scan() {
+        text := scan.Text()
+        if text != "" {
+            hash := NewHash(text)
+            hashes = append(hashes, hash)
+        }
+    }
+
+    return hashes
 }
 
 
 func main() {
-    if len(os.Args) != 5 {
-        fmt.Println("Usage: scram username password_file salt stored_key")
+    if len(os.Args) != 3 {
+        fmt.Println("Usage: mongoscram hash password_file")
         os.Exit(1)
     }
 
-    name := os.Args[1]
+    hash_file := os.Args[1]
     pwd_file := os.Args[2]
-    salt := os.Args[3]
-    stored_key := os.Args[4]
+    hashes := parse(hash_file)
     threads := 10
 
-    //Decode our salt
-    salt_byte, err := base64.StdEncoding.DecodeString(salt)
-    if err != nil {
-        panic("Could not decode salt.")
-    }
 
     /*
     Everything below this point was blatantly stolen from @TheColonial's
@@ -108,7 +155,9 @@ func main() {
                 }
 
                 // Mode-specific processing
-                verify_scram([]byte(name), []byte(word), salt_byte, stored_key)
+                for _, hash := range hashes {
+                    verify_scram(hash, []byte(word))
+                }
             }
 
             // Indicate to the wait group that the thread
