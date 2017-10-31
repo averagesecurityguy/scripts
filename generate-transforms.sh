@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Taken from: http://www.nta-monitor.com/wiki/index.php/Ike-scan_User_Guide
-# Usage: generate-transforms.sh | xargs --max-lines=8 ike-scan 10.0.0.0/24
+# Usage: generate-transforms.sh | xargs --max-lines=8 ike-scan -A --id=vpn 10.0.0.0/24
 
 # Encryption algorithms: DES, Triple-DES, AES/128, AES/192 and AES/256
 ENCLIST="1 5 7/128 7/192 7/256"
