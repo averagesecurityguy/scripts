@@ -3,8 +3,6 @@ package main
 import (
     "os"
     "fmt"
-    "sync"
-    "bytes"
     "bufio"
     "strings"
     "crypto/hmac"
@@ -16,20 +14,18 @@ import (
 )
 
 type Hash struct {
-    User []byte
-    Salt []byte
-    Key  string
+    User  string
+    Salt  []byte
+    Key   string
 }
 
-func NewHash(hash string) *Hash {
-    h := new(Hash)
-
+func parseHash(hash string) (string, string, []byte) {
     parts := strings.Split(hash, ":")
-    h.User = []byte(parts[0])
+    user := parts[0]
 
     parts = strings.Split(parts[2], "$")
     salt := parts[3]
-    h.Key = parts[4]
+    expected := parts[4]
 
     for {
         if len(salt) % 3 == 0 { break }
@@ -38,14 +34,14 @@ func NewHash(hash string) *Hash {
 
     //Decode our salt
     decoded, err := base64.StdEncoding.DecodeString(salt)
-    if err == nil {
-        h.Salt = decoded
+    if err != nil {
+        return "", "", []byte("")
     }
 
-    return h
+    return user, expected, decoded
 }
 
-func calculate_scram(pwd, salt []byte) string {
+func calculate_scram(user, pwd string, salt []byte) string {
     /*
     Calculate the MongoDB SCRAM-SHA-1 hash. It varies from the standard
     slightly by calculating the MD5 of the password and hex encoding it before
@@ -53,11 +49,13 @@ func calculate_scram(pwd, salt []byte) string {
 
     Thanks @StrangeWill for helping me with that.
     */
-    digested_password := md5.New()
-    digested_password.Write(pwd)
-    hex_md5 := hex.EncodeToString(digested_password.Sum(nil))
+    str := fmt.Sprintf("%s:mongo:%s", user, pwd)
+    pwd_md5 := md5.New().Sum([]byte(str))
 
-    salted_password := pbkdf2.Key([]byte(hex_md5), salt, 10000, 20, sha1.New)
+    pwd_hex := make([]byte, hex.EncodedLen(len(pwd_md5)))
+    hex.Encode(pwd_hex, pwd_md5)
+
+    salted_password := pbkdf2.Key(pwd_hex, salt, 10000, 20, sha1.New)
     
     client_key := hmac.New(sha1.New, salted_password)
     client_key.Write([]byte("Client Key"))    
@@ -68,27 +66,9 @@ func calculate_scram(pwd, salt []byte) string {
     return base64.StdEncoding.EncodeToString(stored_key.Sum(nil))
 }
 
-
-func verify_scram(hash *Hash, pwd []byte) {
-    /*
-    Verify that the username/password combination matches the stored_key.
-    */
-    var userpass bytes.Buffer
-
-    userpass.Write(hash.User)
-    userpass.WriteString(":mongo:")
-    userpass.Write(pwd)
-
-    scram := calculate_scram(userpass.Bytes(), hash.Salt)
-
-    if scram == hash.Key {
-        fmt.Printf("%s:%s\n", hash.User, pwd)
-    }
-}
-
 // Parse the given file to get the mongo-scram hashes
-func parse(filename string) []*Hash {
-    var hashes []*Hash
+func hashes(filename string) []string {
+    var hashes []string
 
     data, err := os.Open(filename)
     if err != nil {
@@ -101,14 +81,41 @@ func parse(filename string) []*Hash {
     for scan.Scan() {
         text := scan.Text()
         if text != "" {
-            hash := NewHash(text)
-            hashes = append(hashes, hash)
+            hashes = append(hashes, text)
         }
     }
 
     return hashes
 }
 
+func words(filename string) <-chan string {
+    out := make(chan string)
+
+    go func() {
+        // Open our password list
+        wordlist, err := os.Open(filename)
+        if err != nil {
+            panic("Failed to open wordlist")
+        }
+
+        defer wordlist.Close()
+
+        // Lazy reading of the wordlist line by line
+        scan := bufio.NewScanner(wordlist)
+        for scan.Scan() {
+            text := scan.Text()
+
+            // Skip "comment" lines
+            if strings.HasPrefix(text, "#") == false {
+                out <- text
+            }
+        }
+
+        close(out)
+    }()
+
+    return out
+}
 
 func main() {
     if len(os.Args) != 3 {
@@ -116,69 +123,22 @@ func main() {
         os.Exit(1)
     }
 
-    hash_file := os.Args[1]
-    pwd_file := os.Args[2]
-    hashes := parse(hash_file)
-    threads := 10
+    hashList := hashes(os.Args[1])
+    wordChan := words(os.Args[2])
 
+    for pwd := range wordChan {
+        for _, hash := range hashList {
+            user, expected, salt := parseHash(hash)
+            if user == "" { continue }
+            pass := pwd
 
-    /*
-    Everything below this point was blatantly stolen from @TheColonial's
-    excellent gobuster program. https://github.com/OJ/gobuster
+            go func() {
+                calculated := calculate_scram(user, pass, salt)
 
-    Thanks @TheColonial
-    */
-
-    // Open our password list
-    wordlist, err := os.Open(pwd_file)
-    if err != nil {
-        panic("Failed to open wordlist")
-    }
-
-    // channels used for comms
-    wordChan := make(chan string, threads)
-
-    // Use a wait group for waiting for all threads to finish
-    processorGroup := new(sync.WaitGroup)
-    processorGroup.Add(threads)
-
-    // Create goroutines for each of the number of threads
-    // specified.
-    for i := 0; i < threads; i++ {
-        go func() {
-            for {
-                word := <-wordChan
-
-                // Did we reach the end? If so break.
-                if word == "" {
-                    break
+                if expected == calculated {
+                    fmt.Printf("%s:%s\n", user, pass)
                 }
-
-                // Mode-specific processing
-                for _, hash := range hashes {
-                    verify_scram(hash, []byte(word))
-                }
-            }
-
-            // Indicate to the wait group that the thread
-            // has finished.
-            processorGroup.Done()
-        }()
-    }
-
-    defer wordlist.Close()
-
-    // Lazy reading of the wordlist line by line
-    scanner := bufio.NewScanner(wordlist)
-    for scanner.Scan() {
-        word := scanner.Text()
-
-        // Skip "comment" lines
-        if strings.HasPrefix(word, "#") == false {
-            wordChan <- word
+            }()
         }
     }
-
-    close(wordChan)
-    processorGroup.Wait()    
 }
