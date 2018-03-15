@@ -48,6 +48,19 @@ func check(e error) {
     }
 }
 
+func head(url string) (int, string) {
+    resp, err := http.Head(url)
+    if err != nil {
+        return 0, ""
+    }
+
+    if resp.StatusCode == 307:
+        return resp.StatusCode, resp.Header("Location")
+    }
+
+    return resp.StatusCode, ""
+}
+
 func get(url string) ([]byte, error) {
     resp, err := http.Get(url)
     if err != nil {
@@ -72,6 +85,31 @@ func get(url string) ([]byte, error) {
     }
 
     return body, nil
+}
+
+func search(word string) []string {
+    var urls []string
+
+    public := lookup(word)
+
+    urls = append(urls, public...)
+
+    for _, w := range words {
+        url :=
+    }
+
+}
+
+func save(path string, data []byte) {
+    f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf("[-] Could not open file: %s.", path)
+        return
+    }
+
+    f.Write(data)
+    f.WriteString("\n")
+    f.Close()
 }
 
 func usage() {
@@ -123,6 +161,21 @@ func main() {
             }
 
             c.Println(string(data))
+        },
+    })
+
+    shell.AddCmd(&ishell.Cmd{
+        Name: "save",
+        Help: "save key_name file_name\tSave the key to a file.",
+        Func: func (c *ishell.Context) {
+            url := baseUrl + "/" + c.Args[0]
+            data, err := get(url)
+            if err != nil {
+                c.Println(err.Error())
+                return
+            }
+
+            save(c.Args[1], data)
         },
     })
 
