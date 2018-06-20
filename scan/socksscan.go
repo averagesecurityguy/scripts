@@ -13,6 +13,8 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+var proxyStr string
+
 // Struct to hold our target information.
 type Target struct {
 	host string
@@ -67,11 +69,11 @@ func connect(t Target) {
 	}
 
 	if err != nil {
-		fmt.Printf("Connection Error: %s\n", err)
+		fmt.Printf("Error: %s - %s\n", t.String(), err)
 		return
 	}
 
-	fmt.Printf("Open: %s\n", target.String())
+	fmt.Printf("Open: %s\n", t.String())
 	conn.Close()
 }
 
@@ -79,7 +81,6 @@ func main() {
 	var hostFile string
 	var portFile string
 	var threads int
-	var proxyStr string
 
 	flag.StringVar(&hostFile, "H", "hosts", "File containing a list of target hosts.")
 	flag.StringVar(&portFile, "P", "ports", "File containing a list of target ports.")
@@ -87,10 +88,6 @@ func main() {
 	flag.StringVar(&proxyStr, "p", "127.0.0.1:1080", "Proxy string in host:port format.")
 
 	flag.Parse()
-
-	var err error
-
-	ports = make(map[string][]string)
 
 	// Get our hosts and ports
 	hosts := items(hostFile, "\n")
