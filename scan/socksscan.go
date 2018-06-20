@@ -32,10 +32,6 @@ func (direct) Dial(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, 10*time.Second)
 }
 
-var d direct
-var prx proxy.Dialer
-var ports map[string][]string
-
 // Open file and split it into strings using sep as the separator.
 func items(filename, sep string) []string {
 	data, err := ioutil.ReadFile(filename)
@@ -49,10 +45,24 @@ func items(filename, sep string) []string {
 
 // Connect to a target using our proxy
 func connect(t Target) {
+	var d direct
+
+	// Build the proxy connection
+	prx, err := proxy.SOCKS5("tcp", proxyStr, nil, d)
+	if err != nil {
+		fmt.Printf("Cannot connect to SOCKS server: %s\n", err)
+		os.Exit(1)
+	}
+
 	conn, err := prx.Dial("tcp", t.String())
 
 	// Do not print timeout errors.
 	if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+		return
+	}
+
+	// Do not print EOF errors.
+	if strings.Contains("EOF", err.Error()) {
 		return
 	}
 
@@ -61,7 +71,7 @@ func connect(t Target) {
 		return
 	}
 
-	ports[t.host] = append(ports[t.host], t.port)
+	fmt.Printf("Open: %s\n", target.String())
 	conn.Close()
 }
 
@@ -81,13 +91,6 @@ func main() {
 	var err error
 
 	ports = make(map[string][]string)
-
-	// Build the proxy connection
-	prx, err = proxy.SOCKS5("tcp", proxyStr, nil, d)
-	if err != nil {
-		fmt.Printf("Cannot connect to SOCKS server: %s\n", err)
-		os.Exit(1)
-	}
 
 	// Get our hosts and ports
 	hosts := items(hostFile, "\n")
