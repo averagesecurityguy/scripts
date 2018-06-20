@@ -31,7 +31,10 @@ type direct struct{}
 // Add a time out to our Dial so that the connection attempt doesn't hang
 // forever.
 func (direct) Dial(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, 10*time.Second)
+	duration := 10 * time.Second
+	d := net.Dialer{Timeout: duration, Deadline: time.Now().Add(duration)}
+
+	return d.Dial(network, addr)
 }
 
 // Open file and split it into strings using sep as the separator.
@@ -63,12 +66,12 @@ func connect(t Target) {
 		return
 	}
 
-	// Do not print EOF errors.
-	if strings.Contains("EOF", err.Error()) {
-		return
-	}
-
 	if err != nil {
+		// Do not print EOF errors.
+		if strings.Contains(err.Error(), "EOF") {
+			return
+		}
+
 		fmt.Printf("Error: %s - %s\n", t.String(), err)
 		return
 	}
