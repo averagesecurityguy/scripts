@@ -14,6 +14,8 @@ import (
 )
 
 var proxyStr string
+var total int
+var complete int
 
 // Struct to hold our target information.
 type Target struct {
@@ -59,6 +61,7 @@ func connect(t Target) {
 		os.Exit(1)
 	}
 
+	complete = complete + 1
 	conn, err := prx.Dial("tcp", t.String())
 
 	// Do not print timeout errors.
@@ -78,6 +81,10 @@ func connect(t Target) {
 
 	fmt.Printf("Open: %s\n", t.String())
 	conn.Close()
+
+	if complete%100 == 0 {
+		fmt.Printf("Completed %d of %d\n", complete, total)
+	}
 }
 
 func main() {
@@ -110,6 +117,8 @@ func main() {
 			processorGroup.Done()
 		}()
 	}
+
+	total = len(hosts) * len(ports)
 
 	for _, host := range hosts {
 		for _, port := range ports {
