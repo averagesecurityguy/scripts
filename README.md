@@ -19,5 +19,5 @@ Organization
 * `postexploit` - Tools for gathering data post exploitation.
 * `scan` - Network scanners and parsers.
 * `shells` - No explanation necessary.
-* `webapp` - Toos for web application testing.
+* `webapp` - Tools for web application testing.
 * `wireless` - Wireless testing tools.
