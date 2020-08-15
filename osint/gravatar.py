@@ -79,7 +79,10 @@ def get_profile(email):
             entry['username'] = e.get('preferredUsername', '')
             entry['location'] = e.get('currentLocation', '')
             entry['name'] = get_name(e.get('name'))
+            entry['phoneNumbers'] = get_phoneNumbers(e.get('phoneNumbers'))
             entry['accounts'] = get_accounts(e.get('accounts'))
+            entry['instantMsgs'] = get_instantMsgs(e.get('ims'))
+            entry['cryptoCurrency'] = get_cryptoCurrency(e.get('currency'))
             entries.append(entry)
 
     return entries
@@ -95,6 +98,22 @@ def get_name(name):
         return ''
     else:
         return name.get('formatted', '')
+
+def get_phoneNumbers(data):
+    '''
+    Extract the Phone Numbers from the results.
+    '''
+    phoneNumbers = []
+    if data is None:
+        return phoneNumbers
+    else:
+        for b in data:
+            phone = {}
+            phone['type'] = b.get('type', '')
+            phone['value'] = b.get('value', '')
+            phoneNumbers.append(phone)
+    
+    return phoneNumbers
 
 
 def get_accounts(data):
@@ -114,22 +133,67 @@ def get_accounts(data):
 
     return accounts
 
+def get_cryptoCurrency(data):
+    '''
+    Extract the BTC Address.
+    '''
+    cryptoCurrency = []
+    if data is None:
+        return cryptoCurrency
+    else:
+        for c in data:
+            currency = {}
+            currency['type'] = c.get('type', '')
+            currency['value'] = c.get('value', '')
+            cryptoCurrency.append(currency)
+
+    return cryptoCurrency
+
+def get_instantMsgs(data):
+    '''
+    Build a list of instant message account by extracting specific data points if they exist.
+    Return the list of accounts extracted.
+    '''
+    instantMsgs = []
+    if data is None:
+        return instantMsgs
+    else:
+        for d in data:
+            ims = {}
+            ims['type'] = d.get('type', '')
+            ims['value'] = d.get('value', '')
+            instantMsgs.append(ims) 
+
+    return instantMsgs
+
 
 def print_profile(profile):
     '''
     Print the profile in a readable format.
     '''
     for p in profile:
-        print p['email']
-        print '-' * len(p['email'])
-        print 'Name: {}'.format(p['name'])
-        print 'Username: {}'.format(p['username'])
-        print 'Location: {}'.format(p['location'])
-        print 'Accounts:'
+        print(p['email'])
+        print('-' * len(p['email']))
+        print('Name: {}'.format(p['name']))
+        print('Username: {}'.format(p['username']))
+        print('Location: {}'.format(p['location']))
+        print('Accounts:')
         for account in p['accounts']:
-            print '  Username: {}'.format(account['username'])
-            print '  URL: {}'.format(account['url'])
-        print
+            print('  Username: {}'.format(account['username']))
+            print('  URL: {}'.format(account['url']))
+        print('Instant Message:')
+        for instantMsg in p['instantMsgs']:
+            print('  Provider: {}'.format(instantMsg['type']))
+            print('  Handle: {}'.format(instantMsg['value']))
+        print('Phone:')
+        for phone in p['phoneNumbers']:
+            print('  Type: {}'.format(phone['type']))
+            print('  Number: {}'.format(phone['value']))
+        print('CyptoCurrency:')
+        for currency in p['cryptoCurrency']:
+            print('  Type: {}'.format(currency['type']))
+            print('  Address: {}'.format(currency['value']))
+        print()
 
 
 
