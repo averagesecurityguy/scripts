@@ -57,10 +57,7 @@ def get_gravatar(email):
         except ValueError:
             print '[-] Could not convert response to JSON.'
     elif resp.status_code == 404:
-        try:
-            print("\n" + "[-] Account not found.")
-        except ValueError:
-            pass
+        print("\n" + "[-] Account not found.")
     else:
         print '[-] Received status {0}'.format(resp.status_code)
 
